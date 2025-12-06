@@ -46,3 +46,7 @@ func (r *Repository) CreateWorklod(ctx context.Context, domainWorkload workload.
 	}
 	return r.workloadPrimitiveSelect(ctx, r.queries.CreateWorkload(), domainWorkload.ID, domainWorkload.Status, containerJSON)
 }
+
+func (r *Repository) GetWorkload(ctx context.Context, workloadID string) (*workload.Workload, error) {
+	return r.workloadPrimitiveSelect(ctx, r.queries.SelectWorkloadByID(), workloadID)
+}

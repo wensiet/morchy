@@ -52,3 +52,35 @@ func (rh *RouterHandler) listWorkloads(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, workloadApiModels)
 }
+
+func (rh *RouterHandler) getWorkload(c *gin.Context) {
+	workloadID := c.Param("workload_id")
+
+	workload, err := rh.ucHandler.GetWorkload(c, workloadID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+	workloadApiModel := jsonformatter.NewWorkloadResponseFromDomain(workload)
+	c.JSON(http.StatusOK, workloadApiModel)
+}
+
+func (rh *RouterHandler) createWorkload(c *gin.Context) {
+	var workloadSpec jsonformatter.WorkloadSpecRequest
+	err := c.ShouldBindJSON(&workloadSpec)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	domainWorkloadSpec := workloadSpec.ToDomain()
+	createdWorkload, err := rh.ucHandler.CreateWorkload(c, domainWorkloadSpec)
+
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	workloadApiModel := jsonformatter.NewWorkloadResponseFromDomain(createdWorkload)
+	c.JSON(http.StatusCreated, workloadApiModel)
+}

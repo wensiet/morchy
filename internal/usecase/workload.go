@@ -20,8 +20,12 @@ func (i *interactor) CreateWorkload(ctx context.Context, workloadSpec workload.W
 	return workload, nil
 }
 
-func (i *interactor) GetWorkload(ctx context.Context, workloadID string) {
-	panic("not implemented")
+func (i *interactor) GetWorkload(ctx context.Context, workloadID string) (*workload.Workload, error) {
+	workload, err := i.wokrloadRepo.GetWorkload(ctx, workloadID)
+	if err != nil {
+		return nil, err
+	}
+	return workload, nil
 }
 
 func (i *interactor) ListWorkloads(ctx context.Context, statusEq *string, resourceLte *pkgworkload.ResourceLimits) ([]*workload.Workload, error) {
