@@ -17,7 +17,7 @@ type NodeLogic interface {
 
 type WorkloadLogic interface {
 	ListWorkloads(ctx context.Context, statusEq *string, resourceLte *pkgworkload.ResourceLimits) ([]*workload.Workload, error)
-	GetWorkload(context.Context, string)
+	GetWorkload(context.Context, string) (*workload.Workload, error)
 	CreateWorkload(ctx context.Context, workloadSpec workload.WorkloadSpec) (*workload.Workload, error)
 }
 
