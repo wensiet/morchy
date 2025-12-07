@@ -2,12 +2,15 @@ package usecase
 
 import (
 	"context"
-	"net/http"
+
+	"github.com/wernsiet/morchy/pkg/agent/domain/workload"
+	"github.com/wernsiet/morchy/pkg/agent/implementation/controlplane"
+	"github.com/wernsiet/morchy/pkg/runtime"
+	"go.uber.org/zap"
 )
 
 type JoinLogic interface {
 	ApplyWorkloadJoin(context.Context) error
-	ReconcileWorkloads(context.Context) error
 }
 
 type Handler interface {
@@ -15,15 +18,22 @@ type Handler interface {
 }
 
 type interactor struct {
-	httpClient      *http.Client
-	controlPlaneURL string
+	logger             *zap.Logger
+	controlplaneClient controlplane.ControlPlaneClient
+	runtimeClient      runtime.RuntimeClient
+	workloadRepo       workload.Repository
 }
 
 func NewHandler(
-	httpClient *http.Client, controlPlaneURL string,
+	logger *zap.Logger,
+	controlplaneClient controlplane.ControlPlaneClient,
+	runtimeClient runtime.RuntimeClient,
+	workloadRepo workload.Repository,
 ) Handler {
 	return &interactor{
-		httpClient:      httpClient,
-		controlPlaneURL: controlPlaneURL,
+		logger:             logger,
+		controlplaneClient: controlplaneClient,
+		runtimeClient:      runtimeClient,
+		workloadRepo:       workloadRepo,
 	}
 }

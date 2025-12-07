@@ -2,155 +2,107 @@ package usecase
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
-	"net/url"
+	"time"
 
+	"github.com/wernsiet/morchy/pkg/agent/domain"
 	"github.com/wernsiet/morchy/pkg/agent/domain/workload"
-	"github.com/wernsiet/morchy/pkg/runtime"
+	"go.uber.org/zap"
 )
 
-func (i *interactor) discoverWorkloads(ctx context.Context, limits runtime.ResourceLimits) ([]*workload.Workload, error) {
-	type workloadResponse struct {
-		ID     string `json:"id" example:"some-uuid"`
-		Status string `json:"status" example:"new"`
-	}
-	u, err := url.Parse(i.controlPlaneURL + "/api/v1/workloads")
-	if err != nil {
-		return nil, fmt.Errorf("invalid url: %w", err)
-	}
-
-	q := u.Query()
-	q.Set("cpu", fmt.Sprintf("%d", limits.CPU))
-	q.Set("ram", fmt.Sprintf("%d", limits.RAM))
-	q.Set("status", "new")
-	u.RawQuery = q.Encode()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
-	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
-	}
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := i.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("http request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status: %d", resp.StatusCode)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("read body: %w", err)
-	}
-
-	var workloads []workloadResponse
-	if err := json.Unmarshal(body, &workloads); err != nil {
-		return nil, fmt.Errorf("unmarshal: %w", err)
-	}
-
-	var result []*workload.Workload
-	for _, wr := range workloads {
-		result = append(result, &workload.Workload{
-			ID:     wr.ID,
-			Status: workload.WorkloadStatus(wr.Status),
-		})
-	}
-
-	return result, nil
-}
-
-func (i *interactor) launchWorkload(ctx context.Context, w *workload.Workload) error {
-	return nil
-}
-
-func (i *interactor) leaseWorkload(ctx context.Context, w *workload.Workload) error {
-	return i.leaseMutationAction(ctx, w, http.MethodPost)
-}
-
-func (i *interactor) extendWorkloadLease(ctx context.Context, w *workload.Workload) error {
-	return i.leaseMutationAction(ctx, w, http.MethodPut)
-}
-
-func (i *interactor) leaseMutationAction(ctx context.Context, w *workload.Workload, method string) error {
-	u, err := url.Parse(i.controlPlaneURL + "/api/v1/workloads/" + w.ID + "/lease")
-	if err != nil {
-		return fmt.Errorf("invalid url: %w", err)
-	}
-
-	q := u.Query()
-	q.Set("node_id", "some-node-uuid")
-	u.RawQuery = q.Encode()
-
-	req, err := http.NewRequestWithContext(ctx, method, u.String(), nil)
-	if err != nil {
-		return fmt.Errorf("create request: %w", err)
-	}
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := i.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("http request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		fmt.Println("Raw JSON response:", string(body))
-
-		return fmt.Errorf("unexpected status: %d", resp.StatusCode)
-	}
-
-	return nil
-}
-
-func (i *interactor) discoverLimits(ctx context.Context) (*runtime.ResourceLimits, error) {
-	return &runtime.ResourceLimits{
-		CPU: 500,
-		RAM: 1024,
-	}, nil
-}
-
 func (i *interactor) ApplyWorkloadJoin(ctx context.Context) error {
-	limits, err := i.discoverLimits(ctx)
+	logger := i.logger.With(zap.String(domain.SUsecase, domain.SApplyWorkloadJoin))
+
+	availableWorkloads, err := i.controlplaneClient.ListAvailableWorkloads(ctx, *i.workloadRepo.GetResourceLimits())
 	if err != nil {
-		return err
-	}
-	availableWorkloads, err := i.discoverWorkloads(ctx, *limits)
-	if err != nil {
-		return err
+		return domain.ErrorBaseWorkloadInternal.Wrapf(err, "error getting available workloads from control-plane")
 	}
 	if len(availableWorkloads) == 0 {
+		logger.Info("skipped workload join", zap.String(domain.SReason, domain.SNotWorkloadsToSchedule))
 		return nil
 	}
 	chosenWorkload := availableWorkloads[0]
-	fmt.Printf("Chosen workload: %s\n", chosenWorkload.ID)
+	logger = logger.With(zap.String("workloadID", chosenWorkload.ID))
 
-	err = i.leaseWorkload(ctx, chosenWorkload)
-	if err != nil {
-		return err
+	logger.Info("trying to join workload")
+
+	if err := i.controlplaneClient.CreateWorkloadLease(ctx, chosenWorkload.ID); err != nil {
+		// return domain.ErrorBaseWorkloadInternal.With(domain.SWorkload, chosenWorkload.ID).
+		// 	Wrapf(err, "error leasing workload from control-plane")
 	}
 
-	err = i.launchWorkload(ctx, chosenWorkload)
+	containerID, err := i.runtimeClient.CreateContainer(ctx, chosenWorkload.Container)
 	if err != nil {
-		return err
+		return domain.ErrorBaseWorkloadInternal.With(domain.SWorkload, chosenWorkload.ID).
+			Wrapf(err, "error while creating runtime container")
 	}
+
+	if err := i.runtimeClient.StartContainer(ctx, containerID); err != nil {
+		return domain.ErrorBaseWorkloadInternal.With(domain.SWorkload, chosenWorkload.ID).
+			Wrapf(err, "error while starting runtime container")
+	}
+
+	_, err = i.workloadRepo.SaveWorklod(*chosenWorkload)
+	if err != nil {
+		return domain.ErrorBaseWorkloadInternal.With(domain.SWorkload, chosenWorkload.ID).
+			Wrapf(err, "error while saving started workload")
+	}
+
+	// Start async reconciliation loop to keep extending the lease
+	go i.startWorkloadAsyncReconciliation(ctx, chosenWorkload)
+
+	logger.Info("successfully joined workload")
 
 	return nil
 }
 
-func (i *interactor) ReconcileWorkloads(ctx context.Context) error {
-	wl := &workload.Workload{
-		ID:     "2a95b423-7586-41af-a591-c2fd1c4eb4a2",
-		Status: workload.NewWorkloadStatus,
+func (i *interactor) terminateWorkload(ctx context.Context, w workload.Workload) error {
+	i.logger.Info("terminating workload", zap.String("workloadID", w.ID))
+	if err := i.runtimeClient.RemoveContainer(ctx, w.Container.Name); err != nil {
+		return domain.ErrorBaseWorkloadInternal.With(domain.SWorkload, w.ID).
+			Wrapf(err, "failed to remove container")
 	}
-	err := i.extendWorkloadLease(ctx, wl)
+	if err := i.runtimeClient.StopContainer(ctx, w.Container.Name); err != nil {
+		return domain.ErrorBaseWorkloadInternal.With(domain.SWorkload, w.ID).
+			Wrapf(err, "failed to stop container")
+	}
+	i.workloadRepo.RemoveWorkload(w.ID)
+	return nil
+}
+
+func (i *interactor) startWorkloadAsyncReconciliation(ctx context.Context, w *workload.Workload) {
+	ticker := time.NewTicker(time.Second * 10)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			err := i.reconcileWorkload(ctx, w.ID)
+			if err != nil {
+				i.logger.Error("failed to reconcile workload", zap.Error(err))
+				if terminateErr := i.terminateWorkload(ctx, *w); terminateErr != nil {
+					i.logger.Error("failed to termintae workload", zap.Error(err))
+				}
+				return
+			}
+		}
+	}
+}
+
+func (i *interactor) reconcileWorkload(ctx context.Context, workloadID string) error {
+	wl, err := i.workloadRepo.GetWorkload(workloadID)
 	if err != nil {
+		return err
+	}
+	containerStatus, err := i.runtimeClient.GetContainerStatus(ctx, wl.Container.Name)
+	if err != nil {
+		return err
+	}
+	if containerStatus != domain.SRunning {
+		return domain.ErrorBaseWorkloadHealthcheckFailed.With(domain.SWorkload, wl.ID).Errorf("workload healthcheck failed: %s", containerStatus)
+	}
+	if err = i.controlplaneClient.ExtendWorkloadLease(ctx, wl.ID); err != nil {
 		return err
 	}
 	return nil
