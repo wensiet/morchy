@@ -28,7 +28,7 @@ func (r *Repository) ListWorkloads(ctx context.Context, status *string, resource
 	var workloads []*workload.Workload
 	for rows.Next() {
 		var w dbWorkload
-		err := rows.Scan(&w.ID, &w.Status, &w.CreatedAt)
+		err := rows.Scan(&w.ID, &w.Status, &w.CreatedAt, &w.Container, nil)
 		if err != nil {
 			return nil, err
 		}

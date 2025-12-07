@@ -11,7 +11,7 @@ type queries struct {
 }
 
 func (q queries) SelectManyWorkloads(statusEq *string, limits *runtime.ResourceLimits) (string, []any) {
-	query := "SELECT w.id, w.status, w.created_at FROM workload w JOIN spec s ON w.id = s.id"
+	query := "SELECT w.id, w.status, w.created_at, w.container, l.workload_id FROM workload w LEFT JOIN lease l ON w.id = l.workload_id JOIN spec s ON w.id = s.id"
 	baseOrdering := " ORDER BY w.created_at"
 
 	var args []any
@@ -28,6 +28,8 @@ func (q queries) SelectManyWorkloads(statusEq *string, limits *runtime.ResourceL
 		conditions = append(conditions, fmt.Sprintf("s.ram <= $%d", len(args)+1))
 		args = append(args, limits.RAM)
 	}
+
+	conditions = append(conditions, "l.workload_id IS NULL")
 
 	if len(conditions) > 0 {
 		query += " WHERE " + strings.Join(conditions, " AND ")
