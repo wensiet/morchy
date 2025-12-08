@@ -7,8 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func NewPgxpool(ctx context.Context) (*pgxpool.Pool, error) {
-	connString := "postgres://user:pass@localhost:5432/database?sslmode=disable"
+func NewPgxpool(ctx context.Context, connString string) (*pgxpool.Pool, error) {
 	config, err := pgxpool.ParseConfig(connString)
 	if err != nil {
 		return nil, err

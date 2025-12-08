@@ -3,38 +3,69 @@ package usecase
 import (
 	"context"
 
+	"github.com/samber/oops"
 	"github.com/wernsiet/morchy/pkg/controlplane/domain"
 	"github.com/wernsiet/morchy/pkg/controlplane/domain/workload"
+	"go.uber.org/zap"
 )
 
 func (i *interactor) GetLeaseByNodeAndWorkloadID(ctx context.Context, nodeId, workloadId string) (*workload.Lease, error) {
+	logger := i.logger.With(
+		zap.String(domain.SDomain, domain.SWorkload),
+		zap.String(domain.SNodeID, nodeId),
+		zap.String(domain.SWorkloadID, workloadId),
+	)
+
 	lease, err := i.wokrloadRepo.GetLease(ctx, nodeId, workloadId)
 	if err != nil {
+		if oopsErr, ok := oops.AsOops(err); ok && oopsErr.Code() == string(domain.NotFound) {
+			return nil, err
+		}
+		logger.Error("failed to get lease", zap.Error(err))
 		return nil, err
 	}
 	return lease, nil
 }
 
 func (i *interactor) CreateLease(ctx context.Context, nodeId, workloadId string) (*workload.Lease, error) {
+	logger := i.logger.With(
+		zap.String(domain.SDomain, domain.SWorkload),
+		zap.String(domain.SNodeID, nodeId),
+		zap.String(domain.SWorkloadID, workloadId),
+	)
+
 	lease, err := i.wokrloadRepo.CreateLease(ctx, nodeId, workloadId)
 	if err != nil {
+		logger.Error("failed to create lease", zap.Error(err))
 		return nil, err
 	}
 	return lease, nil
 }
 
 func (i *interactor) ExtendLease(ctx context.Context, nodeId, workloadId string) error {
+	logger := i.logger.With(
+		zap.String(domain.SDomain, domain.SWorkload),
+		zap.String(domain.SNodeID, nodeId),
+		zap.String(domain.SWorkloadID, workloadId),
+	)
+
 	err := i.wokrloadRepo.UpdateLease(ctx, nodeId, workloadId)
 	if err != nil {
+		logger.Error("failed to update lease", zap.Error(err))
 		return nil
 	}
 	return err
 }
 
 func (i *interactor) ExpireLeases(ctx context.Context) error {
+	logger := i.logger.With(
+		zap.String(domain.SDomain, domain.SWorkload),
+	)
+
 	err := i.wokrloadRepo.DeleteExpiredLeases(ctx, domain.CLeaseLifetime)
 	if err != nil {
-		return nil
+		logger.Error("failed to delete expired leases", zap.Error(err))
+		return err
 	}
-	return err
+	return nil
 }

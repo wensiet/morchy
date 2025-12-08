@@ -3,7 +3,10 @@ package workload
 import (
 	"context"
 	"encoding/json"
+	"errors"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/wernsiet/morchy/pkg/controlplane/domain"
 	"github.com/wernsiet/morchy/pkg/controlplane/domain/workload"
 	"github.com/wernsiet/morchy/pkg/runtime"
 )
@@ -12,7 +15,10 @@ func (r *Repository) workloadPrimitiveSelect(ctx context.Context, query string, 
 	var w dbWorkload
 	err := r.db.QueryRow(ctx, query, options...).Scan(&w.ID, &w.Status, &w.CreatedAt, &w.Container)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrorWorkloadRepositoryNotFound.New("workload not found")
+		}
+		return nil, domain.ErrorWorkloadRepositoryInternalError.Wrap(err)
 	}
 	return w.ToDomain(), nil
 }
@@ -21,7 +27,7 @@ func (r *Repository) ListWorkloads(ctx context.Context, status *string, resource
 	query, arguments := r.queries.SelectManyWorkloads(status, resources)
 	rows, err := r.db.Query(ctx, query, arguments...)
 	if err != nil {
-		return nil, err
+		return nil, domain.ErrorWorkloadRepositoryInternalError.Wrap(err)
 	}
 	defer rows.Close()
 
@@ -30,7 +36,7 @@ func (r *Repository) ListWorkloads(ctx context.Context, status *string, resource
 		var w dbWorkload
 		err := rows.Scan(&w.ID, &w.Status, &w.CreatedAt, &w.Container, nil)
 		if err != nil {
-			return nil, err
+			return nil, domain.ErrorWorkloadRepositoryInternalError.Wrap(err)
 		}
 		workloads = append(workloads, w.ToDomain())
 	}
@@ -41,7 +47,7 @@ func (r *Repository) ListWorkloads(ctx context.Context, status *string, resource
 func (r *Repository) CreateWorklod(ctx context.Context, domainWorkload workload.Workload) (*workload.Workload, error) {
 	containerJSON, err := json.Marshal(domainWorkload.Spec.Container)
 	if err != nil {
-		return nil, err
+		return nil, domain.ErrorWorkloadRepositoryInternalError.Wrap(err)
 	}
 	return r.workloadPrimitiveSelect(ctx, r.queries.CreateWorkload(), domainWorkload.ID, domainWorkload.Status, containerJSON)
 }
