@@ -5,6 +5,7 @@ import (
 
 	"github.com/wernsiet/morchy/pkg/controlplane/domain/workload"
 	"github.com/wernsiet/morchy/pkg/runtime"
+	"go.uber.org/zap"
 )
 
 type NodeLogic interface {
@@ -33,13 +34,16 @@ type Handler interface {
 }
 
 type interactor struct {
+	logger       *zap.Logger
 	wokrloadRepo workload.Repository
 }
 
 func NewHandler(
+	logger *zap.Logger,
 	workloadRepo workload.Repository,
 ) Handler {
 	return &interactor{
+		logger:       logger,
 		wokrloadRepo: workloadRepo,
 	}
 }

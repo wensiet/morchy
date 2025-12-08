@@ -52,29 +52,30 @@ func (b *BackgroundTaskRunner) runTask(ctx context.Context, task BackgroundTask)
 	ticker := time.NewTicker(task.interval)
 	defer ticker.Stop()
 
-	b.logger.Info("Started background task",
+	b.logger.Info("started background task",
 		zap.String("task", task.name),
 		zap.Duration("interval", task.interval))
 
 	for {
 		select {
-		case <-ctx.Done():
-			b.logger.Info("Stopping background task due to context cancellation",
-				zap.String("task", task.name),
-				zap.Duration("interval", task.interval))
-			return
 		case <-ticker.C:
 			start := time.Now()
 			err := task.executable(ctx)
 			duration := time.Since(start)
 
 			if err != nil {
-				b.logger.Error("Background task failed",
+				b.logger.Error("background task failed",
 					zap.String("task", task.name),
 					zap.Duration("interval", task.interval),
 					zap.Duration("execution_time", duration),
 					zap.Error(err))
 			}
+		case <-ctx.Done():
+			b.logger.Info("stopping background task due to context cancellation",
+				zap.String("task", task.name),
+				zap.Duration("interval", task.interval))
+			return
 		}
+
 	}
 }
