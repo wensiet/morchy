@@ -15,9 +15,20 @@ type ResourceLimits struct {
 }
 
 type Container struct {
-	Name      string         `json:"name"`
-	Image     string         `json:"image"`
-	Command   []string       `json:"command"`
-	Env       []EnvVar       `json:"env"`
-	Resources ResourceLimits `json:"resources"`
+	Name      string            `json:"name"`
+	Image     string            `json:"image"`
+	Command   []string          `json:"command"`
+	Env       []EnvVar          `json:"env"`
+	Resources ResourceLimits    `json:"resources"`
+	Labels    map[string]string `json:"labels"`
+}
+
+type ContainerBrief struct {
+	Name   string            `json:"name"`
+	Image  string            `json:"image"`
+	Labels map[string]string `json:"labels"`
+}
+
+type ContainerFilters struct {
+	Labels map[string]string `json:"labels"`
 }

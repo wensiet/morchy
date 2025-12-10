@@ -4,12 +4,12 @@ import (
 	"context"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/wernsiet/morchy/pkg/agent/domain/workload"
+	apitypes "github.com/wernsiet/morchy/pkg/controlplane/implementation/jsonformatter"
 	"github.com/wernsiet/morchy/pkg/runtime"
 )
 
 type ControlPlaneClient interface {
-	ListAvailableWorkloads(context.Context, runtime.ResourceLimits) ([]*workload.Workload, error)
+	ListAvailableWorkloads(context.Context, runtime.ResourceLimits) ([]*apitypes.WorkloadResponse, error)
 	CreateWorkloadLease(context.Context, string) error
 	ExtendWorkloadLease(context.Context, string) error
 }

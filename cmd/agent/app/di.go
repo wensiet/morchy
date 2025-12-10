@@ -63,6 +63,11 @@ func runLoop(lc fx.Lifecycle, logger *zap.Logger, h usecase.Handler) {
 		OnStart: func(ctx context.Context) error {
 			logger.Info("runLoop OnStart: launching background worker")
 			go func() {
+				err := h.LoadCurrentState(ctx)
+				if err != nil {
+					panic(err)
+				}
+
 				if err := h.ApplyWorkloadJoin(ctx); err != nil {
 					logger.Error("initial ApplyWorkloadJoin failed", zap.Error(err))
 				}

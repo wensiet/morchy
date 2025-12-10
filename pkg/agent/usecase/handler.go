@@ -10,6 +10,7 @@ import (
 )
 
 type JoinLogic interface {
+	LoadCurrentState(context.Context) error
 	ApplyWorkloadJoin(context.Context) error
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 )
 
@@ -12,6 +13,7 @@ type RuntimeClient interface {
 	StartContainer(context.Context, string) error
 	StopContainer(context.Context, string) error
 	RemoveContainer(context.Context, string) error
+	ListContainers(context.Context, *ContainerFilters) ([]*ContainerBrief, error)
 	GetContainerStatus(context.Context, string) (string, error)
 }
 
@@ -29,9 +31,10 @@ func (c *Client) CreateContainer(ctx context.Context, cnt Container) (string, er
 	resp, err := c.dockerAPI.ContainerCreate(
 		ctx,
 		&container.Config{
-			Image: cnt.Image,
-			Cmd:   cnt.Command,
-			Env:   buildEnv(cnt.Env),
+			Image:  cnt.Image,
+			Cmd:    cnt.Command,
+			Env:    buildEnv(cnt.Env),
+			Labels: cnt.Labels,
 		},
 		&container.HostConfig{
 			Resources: container.Resources{
@@ -76,4 +79,36 @@ func (c *Client) GetContainerStatus(ctx context.Context, id string) (string, err
 		return "", err
 	}
 	return containerInspect.State.Status, nil
+}
+
+func (c *Client) ListContainers(ctx context.Context, listFitlers *ContainerFilters) ([]*ContainerBrief, error) {
+	dockerFilters := filters.NewArgs()
+	if listFitlers != nil {
+		for key, value := range listFitlers.Labels {
+			dockerFilters.Add("label", key+"="+value)
+		}
+	}
+
+	containers, err := c.dockerAPI.ContainerList(
+		ctx,
+		container.ListOptions{
+			Filters: dockerFilters,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	containerEntities := make([]*ContainerBrief, 0, len(containers))
+	for _, cnt := range containers {
+		containerEntities = append(
+			containerEntities,
+			&ContainerBrief{
+				Name:   cnt.Names[0],
+				Image:  cnt.Image,
+				Labels: cnt.Labels,
+			},
+		)
+	}
+	return containerEntities, nil
 }
