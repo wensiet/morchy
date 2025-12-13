@@ -1,4 +1,6 @@
 definitions:
+  jsonformatter.EventCreateRequest:
+    type: object
   jsonformatter.LeaseResponse:
     properties:
       created_at:
@@ -16,12 +18,49 @@ definitions:
     type: object
   jsonformatter.WorkloadResponse:
     properties:
+      container:
+        $ref: '#/definitions/runtime.Container'
       id:
         example: some-uuid
         type: string
       status:
         example: new
         type: string
+    type: object
+  runtime.Container:
+    properties:
+      command:
+        items:
+          type: string
+        type: array
+      env:
+        items:
+          $ref: '#/definitions/runtime.EnvVar'
+        type: array
+      image:
+        type: string
+      labels:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        type: string
+      resources:
+        $ref: '#/definitions/runtime.ResourceLimits'
+    type: object
+  runtime.EnvVar:
+    properties:
+      name:
+        type: string
+      value:
+        type: string
+    type: object
+  runtime.ResourceLimits:
+    properties:
+      cpu:
+        type: integer
+      ram:
+        type: integer
     type: object
 info:
   contact: {}
@@ -101,6 +140,31 @@ paths:
       summary: Extend a lease
       tags:
       - leases
+  /api/v1/events:
+    post:
+      consumes:
+      - application/json
+      description: Create a new event for a node
+      parameters:
+      - description: Node ID
+        in: query
+        name: node_id
+        required: true
+        type: string
+      - description: Event payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/jsonformatter.EventCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+      summary: Push event
+      tags:
+      - events
   /api/v1/workloads:
     get:
       consumes:

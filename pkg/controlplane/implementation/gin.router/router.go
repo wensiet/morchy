@@ -29,4 +29,5 @@ func (rh *RouterHandler) setWorkloadRoutes(apiV1 gin.RouterGroup) {
 	apiV1.POST("/workloads", rh.createWorkload)
 	apiV1.POST("/workloads/:workload_id/lease", rh.createLease)
 	apiV1.PUT("/workloads/:workload_id/lease", rh.extendLease)
+	apiV1.POST("/events", rh.pushEvent)
 }

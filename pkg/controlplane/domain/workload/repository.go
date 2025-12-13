@@ -15,4 +15,6 @@ type Repository interface {
 	CreateLease(context.Context, string, string) (*Lease, error)
 	DeleteExpiredLeases(context.Context, int) error
 	UpdateLease(context.Context, string, string) error
+
+	SaveEvent(context.Context, Event) error
 }
