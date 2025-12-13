@@ -61,3 +61,7 @@ func (q queries) UpdateLeaseUpdatedAt() string {
 func (q queries) SelectWorkloadByID() string {
 	return "SELECT w.id, w.status, w.created_at, w.container FROM workload w WHERE w.id = $1"
 }
+
+func (q queries) SaveEvent() string {
+	return "INSERT INTO event (id, source_id, node_id, payload, produced_at) VALUES ($1, $2, $3, $4, $5)"
+}

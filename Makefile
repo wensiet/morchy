@@ -1,5 +1,5 @@
 start-controlplane-dev:
-	swag init -g ./cmd/app/main.go --parseInternal
+	swag init -g ./cmd/controlplane/main.go --parseInternal
 	go run cmd/controlplane/main.go
 
 start-agent-dev:

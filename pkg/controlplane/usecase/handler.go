@@ -28,9 +28,14 @@ type LeaseLogic interface {
 	ExpireLeases(context.Context) error
 }
 
+type EventLogic interface {
+	PushEvent(ctx context.Context, event workload.Event) error
+}
+
 type Handler interface {
 	WorkloadLogic
 	LeaseLogic
+	EventLogic
 }
 
 type interactor struct {

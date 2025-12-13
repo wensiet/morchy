@@ -126,6 +126,44 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/events": {
+            "post": {
+                "description": "Create a new event for a node",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "Push event",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Node ID",
+                        "name": "node_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "description": "Event payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/jsonformatter.EventCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    }
+                }
+            }
+        },
         "/api/v1/workloads": {
             "get": {
                 "description": "Retrieve a list of workloads filtered by status, CPU, and RAM",
@@ -198,6 +236,9 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "jsonformatter.EventCreateRequest": {
+            "type": "object"
+        },
         "jsonformatter.LeaseResponse": {
             "type": "object",
             "properties": {
@@ -222,6 +263,9 @@ const docTemplate = `{
         "jsonformatter.WorkloadResponse": {
             "type": "object",
             "properties": {
+                "container": {
+                    "$ref": "#/definitions/runtime.Container"
+                },
                 "id": {
                     "type": "string",
                     "example": "some-uuid"
@@ -229,6 +273,60 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "new"
+                }
+            }
+        },
+        "runtime.Container": {
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "env": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/runtime.EnvVar"
+                    }
+                },
+                "image": {
+                    "type": "string"
+                },
+                "labels": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "resources": {
+                    "$ref": "#/definitions/runtime.ResourceLimits"
+                }
+            }
+        },
+        "runtime.EnvVar": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "runtime.ResourceLimits": {
+            "type": "object",
+            "properties": {
+                "cpu": {
+                    "type": "integer"
+                },
+                "ram": {
+                    "type": "integer"
                 }
             }
         }
