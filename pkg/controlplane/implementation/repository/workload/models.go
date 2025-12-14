@@ -1,31 +1,38 @@
 package workload
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/wernsiet/morchy/pkg/controlplane/domain/workload"
-	"github.com/wernsiet/morchy/pkg/runtime"
 )
 
 type dbWorkload struct {
 	ID        string
 	Status    string
 	CreatedAt time.Time
-	Container json.RawMessage
+	Spec      dbWorkloadSpec
+}
+
+type dbWorkloadSpec struct {
+	ID      string
+	Image   string
+	CPU     uint
+	RAM     uint
+	Command []string
+	Env     map[string]string
 }
 
 func (w *dbWorkload) ToDomain() *workload.Workload {
-	var c runtime.Container
-
-	if len(w.Container) > 0 {
-		_ = json.Unmarshal(w.Container, &c) // TODO: handle err
-	}
 	return &workload.Workload{
 		ID:     w.ID,
 		Status: workload.WorkloadStatus(w.Status),
 		Spec: workload.WorkloadSpec{
-			Container: c,
+			Name:    w.ID,
+			Image:   w.Spec.Image,
+			CPU:     w.Spec.CPU,
+			RAM:     w.Spec.RAM,
+			Command: w.Spec.Command,
+			Env:     w.Spec.Env,
 		},
 	}
 }

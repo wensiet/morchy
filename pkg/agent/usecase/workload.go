@@ -105,7 +105,10 @@ func (i *interactor) ReconcileWorkload(ctx context.Context, wl workload.Workload
 
 	if err != nil {
 		oopsErr, ok := oops.AsOops(err)
-		if !ok || oopsErr.Code() == domain.SHealthcheckFailed || oopsErr.Code() == domain.SOwnedByAnotherNode {
+		if !ok ||
+			oopsErr.Code() == domain.SHealthcheckFailed ||
+			oopsErr.Code() == domain.SOwnedByAnotherNode ||
+			oopsErr.Code() == domain.STerminatedOnControlPlane {
 			_ = i.stopWorkloadLifecycle(ctx, wl) // TODO: push event
 		}
 		return err

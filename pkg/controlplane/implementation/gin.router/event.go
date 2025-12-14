@@ -9,15 +9,15 @@ import (
 )
 
 // pushEvent godoc
-// @Summary Push event
-// @Description Create a new event for a node
-// @Tags events
-// @Accept json
-// @Produce json
-// @Param node_id query string true "Node ID"
-// @Param body body jsonformatter.EventCreateRequest true "Event payload"
-// @Success 201 {object} nil
-// @Router /api/v1/events [post]
+//	@Summary		Push event
+//	@Description	Create a new event for a node
+//	@Tags			events
+//	@Accept			json
+//	@Produce		json
+//	@Param			node_id	query		string								true	"Node ID"
+//	@Param			body	body		jsonformatter.EventCreateRequest	true	"Event payload"
+//	@Success		201		{object}	nil
+//	@Router			/api/v1/events [post]
 func (rh *RouterHandler) pushEvent(c *gin.Context) {
 	node_id := c.Query("node_id")
 	if node_id == "" {

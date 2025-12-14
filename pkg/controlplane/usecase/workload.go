@@ -14,7 +14,7 @@ import (
 func (i *interactor) CreateWorkload(ctx context.Context, workloadSpec workload.WorkloadSpec) (*workload.Workload, error) {
 	logger := i.logger.With(
 		zap.String(domain.SDomain, domain.SWorkload),
-		zap.String(domain.SContainerName, workloadSpec.Container.Name),
+		zap.String(domain.SContainerName, workloadSpec.Name),
 	)
 
 	workload, err := i.wokrloadRepo.CreateWorkload(ctx, workload.Workload{

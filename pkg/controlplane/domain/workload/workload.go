@@ -1,7 +1,5 @@
 package workload
 
-import "github.com/wernsiet/morchy/pkg/runtime"
-
 type WorkloadStatus string
 
 const (
@@ -17,5 +15,10 @@ type Workload struct {
 }
 
 type WorkloadSpec struct {
-	Container runtime.Container
+	Name    string
+	Image   string
+	CPU     uint
+	RAM     uint
+	Command []string
+	Env     map[string]string
 }

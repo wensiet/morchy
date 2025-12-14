@@ -53,6 +53,18 @@ func (rh *RouterHandler) listWorkloads(c *gin.Context) {
 	c.JSON(http.StatusOK, workloadApiModels)
 }
 
+// getWorkload godoc
+//
+//	@Summary		Get workload
+//	@Description	Retrieve a single workload by ID
+//	@Tags			workloads
+//	@Accept			json
+//	@Produce		json
+//	@Param			workload_id	path		string	true	"Workload ID"	minlength(1)
+//	@Success		200			{object}	jsonformatter.WorkloadResponse
+//	@Failure		400			{object}	map[string]string	"Invalid request parameters"
+//	@Failure		500			{object}	map[string]string	"Internal server error"
+//	@Router			/api/v1/workloads/{workload_id} [get]
 func (rh *RouterHandler) getWorkload(c *gin.Context) {
 	workloadID := c.Param("workload_id")
 
@@ -65,6 +77,18 @@ func (rh *RouterHandler) getWorkload(c *gin.Context) {
 	c.JSON(http.StatusOK, workloadApiModel)
 }
 
+// createWorkload godoc
+//
+//	@Summary		Create workload
+//	@Description	Create a new workload from provided spec
+//	@Tags			workloads
+//	@Accept			json
+//	@Produce		json
+//	@Param			workloadSpec	body		jsonformatter.WorkloadSpecRequest	true	"Workload specification"
+//	@Success		201				{object}	jsonformatter.WorkloadResponse
+//	@Failure		400				{object}	map[string]string	"Invalid request parameters"
+//	@Failure		500				{object}	map[string]string	"Internal server error"
+//	@Router			/api/v1/workloads [post]
 func (rh *RouterHandler) createWorkload(c *gin.Context) {
 	var workloadSpec jsonformatter.WorkloadSpecRequest
 	err := c.ShouldBindJSON(&workloadSpec)

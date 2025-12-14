@@ -2,7 +2,6 @@ package workload
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 
 	"github.com/jackc/pgx/v5"
@@ -13,13 +12,27 @@ import (
 
 func (r *Repository) workloadPrimitiveSelect(ctx context.Context, query string, options ...any) (*workload.Workload, error) {
 	var w dbWorkload
-	err := r.db.QueryRow(ctx, query, options...).Scan(&w.ID, &w.Status, &w.CreatedAt, &w.Container)
+	var s dbWorkloadSpec
+
+	err := r.db.QueryRow(ctx, query, options...).Scan(
+		&w.ID,
+		&w.Status,
+		&w.CreatedAt,
+		&s.ID,
+		&s.Image,
+		&s.CPU,
+		&s.RAM,
+		&s.Command,
+		&s.Env,
+	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrorWorkloadRepositoryNotFound.New("workload not found")
 		}
 		return nil, domain.ErrorWorkloadRepositoryInternalError.Wrap(err)
 	}
+
+	w.Spec = s
 	return w.ToDomain(), nil
 }
 
@@ -34,10 +47,25 @@ func (r *Repository) ListWorkloads(ctx context.Context, status *string, resource
 	var workloads []*workload.Workload
 	for rows.Next() {
 		var w dbWorkload
-		err := rows.Scan(&w.ID, &w.Status, &w.CreatedAt, &w.Container, nil)
+		var s dbWorkloadSpec
+
+		err := rows.Scan(
+			&w.ID,
+			&w.Status,
+			&w.CreatedAt,
+			&s.ID,
+			&s.Image,
+			&s.CPU,
+			&s.RAM,
+			&s.Command,
+			&s.Env,
+			nil,
+		)
 		if err != nil {
 			return nil, domain.ErrorWorkloadRepositoryInternalError.Wrap(err)
 		}
+
+		w.Spec = s
 		workloads = append(workloads, w.ToDomain())
 	}
 
@@ -45,11 +73,51 @@ func (r *Repository) ListWorkloads(ctx context.Context, status *string, resource
 }
 
 func (r *Repository) CreateWorkload(ctx context.Context, domainWorkload workload.Workload) (*workload.Workload, error) {
-	containerJSON, err := json.Marshal(domainWorkload.Spec.Container)
+	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return nil, domain.ErrorWorkloadRepositoryInternalError.Wrap(err)
 	}
-	return r.workloadPrimitiveSelect(ctx, r.queries.CreateWorkload(), domainWorkload.ID, domainWorkload.Status, containerJSON)
+	defer tx.Rollback(ctx)
+
+	var w dbWorkload
+	err = tx.QueryRow(
+		ctx,
+		r.queries.CreateWorkload(),
+		domainWorkload.ID,
+		domainWorkload.Status,
+	).Scan(&w.ID, &w.Status, &w.CreatedAt)
+	if err != nil {
+		return nil, domain.ErrorWorkloadRepositoryInternalError.Wrap(err)
+	}
+
+	var s dbWorkloadSpec
+	err = tx.QueryRow(
+		ctx,
+		r.queries.CreateWorkloadSpec(),
+		w.ID,
+		domainWorkload.Spec.Image,
+		domainWorkload.Spec.CPU,
+		domainWorkload.Spec.RAM,
+		domainWorkload.Spec.Command,
+		domainWorkload.Spec.Env,
+	).Scan(
+		&s.ID,
+		&s.Image,
+		&s.CPU,
+		&s.RAM,
+		&s.Command,
+		&s.Env,
+	)
+	if err != nil {
+		return nil, domain.ErrorWorkloadRepositoryInternalError.Wrap(err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, domain.ErrorWorkloadRepositoryInternalError.Wrap(err)
+	}
+
+	w.Spec = s
+	return w.ToDomain(), nil
 }
 
 func (r *Repository) GetWorkload(ctx context.Context, workloadID string) (*workload.Workload, error) {

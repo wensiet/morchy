@@ -11,7 +11,16 @@ type queries struct {
 }
 
 func (q queries) SelectManyWorkloads(statusEq *string, limits *runtime.ResourceLimits) (string, []any) {
-	query := "SELECT w.id, w.status, w.created_at, w.container, l.workload_id FROM workload w LEFT JOIN lease l ON w.id = l.workload_id JOIN spec s ON w.id = s.id"
+	query := `
+	SELECT 
+		w.id, w.status, w.created_at,
+		s.id, s.image, s.cpu, s.ram, s.command, s.env,
+		l.workload_id
+	FROM workload w
+	JOIN spec s ON w.id = s.id
+	LEFT JOIN lease l ON w.id = l.workload_id
+	`
+
 	baseOrdering := " ORDER BY w.created_at"
 
 	var args []any
@@ -38,7 +47,19 @@ func (q queries) SelectManyWorkloads(statusEq *string, limits *runtime.ResourceL
 }
 
 func (q queries) CreateWorkload() string {
-	return "INSERT INTO workload (id, status, container) VALUES ($1, $2, $3) RETURNING id, status, created_at, container"
+	return `
+		INSERT INTO workload (id, status)
+		 VALUES ($1, $2)
+		 RETURNING id, status, created_at
+	`
+}
+
+func (q queries) CreateWorkloadSpec() string {
+	return `
+		INSERT INTO spec (id, image, cpu, ram, command, env)
+		 VALUES ($1, $2, $3, $4, $5, $6)
+		 RETURNING id, image, cpu, ram, command, env
+	`
 }
 
 func (q queries) GetLease() string {
@@ -75,7 +96,14 @@ func (q queries) DeleteLease() string {
 }
 
 func (q queries) SelectWorkloadByID() string {
-	return "SELECT w.id, w.status, w.created_at, w.container FROM workload w WHERE w.id = $1"
+	return `
+		SELECT 
+			w.id, w.status, w.created_at,
+			s.id, s.image, s.cpu, s.ram, s.command, s.env
+		FROM workload w
+		JOIN spec s ON w.id = s.id
+		WHERE w.id = $1
+	`
 }
 
 func (q queries) SaveEvent() string {

@@ -14,7 +14,7 @@ import (
 //	@Tags			leases
 //	@Accept			json
 //	@Produce		json
-//	@Param			workload_id	path		string	true	"Workload ID" minlength(1)
+//	@Param			workload_id	path		string	true	"Workload ID"	minlength(1)
 //	@Param			node_id		query		string	true	"Node ID"
 //	@Success		200			{object}	jsonformatter.LeaseResponse
 //	@Failure		400			{object}	map[string]string	"Invalid request parameters"
@@ -35,15 +35,15 @@ func (rh *RouterHandler) putLease(c *gin.Context) {
 //
 //	@Summary		Release a lease
 //	@Description	Release/delete a lease for a specific workload on a given node
-//	@Tags		leases
-//	@Accept		json
-//	@Produce	json
-//	@Param		workload_id	path		string	true	"Workload ID" minlength(1)
-//	@Param		node_id		query		string	true	"Node ID"
-//	@Success	204			"No Content"
-//	@Failure	400			{object} map[string]string	"Invalid request parameters"
-//	@Failure	500			{object} map[string]string	"Internal server error"
-//	@Router		/api/v1/workloads/{workload_id}/lease [delete]
+//	@Tags			leases
+//	@Accept			json
+//	@Produce		json
+//	@Param			workload_id	path	string	true	"Workload ID"	minlength(1)
+//	@Param			node_id		query	string	true	"Node ID"
+//	@Success		204			"No Content"
+//	@Failure		400			{object}	map[string]string	"Invalid request parameters"
+//	@Failure		500			{object}	map[string]string	"Internal server error"
+//	@Router			/api/v1/workloads/{workload_id}/lease [delete]
 func (rh *RouterHandler) deleteLease(c *gin.Context) {
 	workloadID := c.Param("workload_id")
 	nodeID := c.Query("node_id")

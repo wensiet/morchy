@@ -45,7 +45,7 @@ func (i *interactor) LoadCurrentState(ctx context.Context) error {
 
 		if err := i.startWorklodLifecycle(ctx, *domainWorkload); err != nil {
 			oopsErr, ok := oops.AsOops(err)
-			if !ok || oopsErr.Code() != domain.SHealthcheckFailed {
+			if !ok || oopsErr.Code() != domain.SHealthcheckFailed || oopsErr.Code() != domain.STerminatedOnControlPlane {
 				return domain.ErrorBaseWorkloadInternal.With(domain.SWorkload, domainWorkload.ID).
 					Wrapf(err, "error on starting workload lifecycle")
 			}

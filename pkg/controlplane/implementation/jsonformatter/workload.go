@@ -11,20 +11,48 @@ type WorkloadResponse struct {
 	Container runtime.Container `json:"container"`
 }
 
+func mapEnvs(env map[string]string) []runtime.EnvVar {
+	var list []runtime.EnvVar
+	for k, v := range env {
+		list = append(list, runtime.EnvVar{
+			Name:  k,
+			Value: v,
+		})
+	}
+	return list
+}
+
 func NewWorkloadResponseFromDomain(w *workload.Workload) *WorkloadResponse {
 	return &WorkloadResponse{
-		ID:        w.ID,
-		Status:    string(w.Status),
-		Container: w.Spec.Container,
+		ID:     w.ID,
+		Status: string(w.Status),
+		Container: runtime.Container{
+			Name:    w.Spec.Name,
+			Image:   w.Spec.Image,
+			Command: w.Spec.Command,
+			Env:     mapEnvs(w.Spec.Env),
+			Resources: runtime.ResourceLimits{
+				CPU: w.Spec.CPU,
+				RAM: w.Spec.RAM,
+			},
+		},
 	}
 }
 
 type WorkloadSpecRequest struct {
-	Container runtime.Container `json:"container"`
+	Image   string            `json:"image"`
+	CPU     uint              `json:"cpu"`
+	RAM     uint              `json:"ram"`
+	Command []string          `json:"command"`
+	Env     map[string]string `json:"env"`
 }
 
 func (wsr *WorkloadSpecRequest) ToDomain() workload.WorkloadSpec {
 	return workload.WorkloadSpec{
-		Container: wsr.Container,
+		Image:   wsr.Image,
+		Command: wsr.Command,
+		Env:     wsr.Env,
+		CPU:     wsr.CPU,
+		RAM:     wsr.RAM,
 	}
 }

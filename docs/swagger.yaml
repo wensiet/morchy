@@ -27,6 +27,23 @@ definitions:
         example: new
         type: string
     type: object
+  jsonformatter.WorkloadSpecRequest:
+    properties:
+      command:
+        items:
+          type: string
+        type: array
+      cpu:
+        type: integer
+      env:
+        additionalProperties:
+          type: string
+        type: object
+      image:
+        type: string
+      ram:
+        type: integer
+    type: object
   runtime.Container:
     properties:
       command:
@@ -65,81 +82,6 @@ definitions:
 info:
   contact: {}
 paths:
-  /api/v1//workloads/{workload_id}/lease:
-    post:
-      consumes:
-      - application/json
-      description: Create a lease for a specific workload on a given node
-      parameters:
-      - description: Workload ID
-        in: path
-        minLength: 1
-        name: workload_id
-        required: true
-        type: string
-      - description: Node ID
-        in: query
-        name: node_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/jsonformatter.LeaseResponse'
-        "400":
-          description: Invalid request parameters
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Create a lease
-      tags:
-      - leases
-    put:
-      consumes:
-      - application/json
-      description: Extend a lease for a specific workload on a given node
-      parameters:
-      - description: Workload ID
-        in: path
-        minLength: 1
-        name: workload_id
-        required: true
-        type: string
-      - description: Node ID
-        in: query
-        name: node_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-        "400":
-          description: Invalid request parameters
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Extend a lease
-      tags:
-      - leases
   /api/v1/events:
     post:
       consumes:
@@ -212,4 +154,146 @@ paths:
       summary: List workloads
       tags:
       - workloads
+    post:
+      consumes:
+      - application/json
+      description: Create a new workload from provided spec
+      parameters:
+      - description: Workload specification
+        in: body
+        name: workloadSpec
+        required: true
+        schema:
+          $ref: '#/definitions/jsonformatter.WorkloadSpecRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/jsonformatter.WorkloadResponse'
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create workload
+      tags:
+      - workloads
+  /api/v1/workloads/{workload_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a single workload by ID
+      parameters:
+      - description: Workload ID
+        in: path
+        minLength: 1
+        name: workload_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/jsonformatter.WorkloadResponse'
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get workload
+      tags:
+      - workloads
+  /api/v1/workloads/{workload_id}/lease:
+    delete:
+      consumes:
+      - application/json
+      description: Release/delete a lease for a specific workload on a given node
+      parameters:
+      - description: Workload ID
+        in: path
+        minLength: 1
+        name: workload_id
+        required: true
+        type: string
+      - description: Node ID
+        in: query
+        name: node_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Release a lease
+      tags:
+      - leases
+    put:
+      consumes:
+      - application/json
+      description: Extend a lease for a specific workload on a given node
+      parameters:
+      - description: Workload ID
+        in: path
+        minLength: 1
+        name: workload_id
+        required: true
+        type: string
+      - description: Node ID
+        in: query
+        name: node_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/jsonformatter.LeaseResponse'
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Extend a lease
+      tags:
+      - leases
 swagger: "2.0"
