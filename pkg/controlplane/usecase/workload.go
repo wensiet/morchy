@@ -17,7 +17,7 @@ func (i *interactor) CreateWorkload(ctx context.Context, workloadSpec workload.W
 		zap.String(domain.SContainerName, workloadSpec.Container.Name),
 	)
 
-	workload, err := i.wokrloadRepo.CreateWorklod(ctx, workload.Workload{
+	workload, err := i.wokrloadRepo.CreateWorkload(ctx, workload.Workload{
 		ID:     uuid.NewString(),
 		Status: workload.NewWorkloadStatus,
 		Spec:   workloadSpec,

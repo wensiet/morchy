@@ -6,6 +6,9 @@ const (
 	InternalServerError ErrorCode = "internal_server_error"
 	NotFound            ErrorCode = "not_found"
 	BadRequest          ErrorCode = "bad_request"
+	Conflict            ErrorCode = "conflict"
+
+	SOwnedByAnotherNode = "owned_by_other_node"
 
 	SDomain     = "domain"
 	SUnknown    = "unknown"
@@ -13,7 +16,7 @@ const (
 	SValidation = "validation"
 
 	SWorkload   = "workload"
-	SWorkloadID = "worklod_id"
+	SWorkloadID = "workload_id"
 
 	SEvent         = "event"
 	SEventSourceID = "event_source_id"

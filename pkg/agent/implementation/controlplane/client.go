@@ -10,8 +10,7 @@ import (
 
 type ControlPlaneClient interface {
 	ListAvailableWorkloads(context.Context, runtime.ResourceLimits) ([]*apitypes.WorkloadResponse, error)
-	CreateWorkloadLease(context.Context, string) error
-	ExtendWorkloadLease(context.Context, string) error
+	CreateOrExtendWorkloadLease(context.Context, string) error
 }
 
 type Client struct {

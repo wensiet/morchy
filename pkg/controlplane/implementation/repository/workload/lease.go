@@ -43,3 +43,14 @@ func (r *Repository) DeleteExpiredLeases(ctx context.Context, retentionInterval 
 func (r *Repository) UpdateLease(ctx context.Context, nodeId, workloadId string) error {
 	return r.leasePrimitiveExec(ctx, r.queries.UpdateLeaseUpdatedAt(), nodeId, workloadId)
 }
+
+func (r *Repository) UpsertLease(ctx context.Context, nodeID string, workloadID string) (*workload.Lease, error) {
+	lease, err := r.leasePrimitiveSelect(ctx, r.queries.UpsertLease(), nodeID, workloadID)
+	if err != nil {
+		return nil, err
+	}
+	if lease == nil {
+		return nil, domain.ErrorWorkloadLeaseOwnedByAnotherNode.Errorf("node %s cannot manipulate this lease", nodeID)
+	}
+	return lease, nil
+}

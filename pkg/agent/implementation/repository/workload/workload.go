@@ -14,7 +14,7 @@ func (r *Repository) GetWorkload(id string) (*workload.Workload, error) {
 	return domainWorkload, nil
 }
 
-func (r *Repository) SaveWorklod(w workload.Workload) (*workload.Workload, error) {
+func (r *Repository) SaveWorkload(w workload.Workload) (*workload.Workload, error) {
 	_, ok := r.workloadStorage[w.ID]
 	if ok {
 		return nil, domain.ErrorWorkloadNotFound.Errorf("workload with id=%s already exists", w.ID)

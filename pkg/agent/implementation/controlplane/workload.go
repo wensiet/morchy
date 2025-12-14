@@ -31,14 +31,14 @@ func (c *Client) ListAvailableWorkloads(ctx context.Context, limits runtime.Reso
 	return workloads, nil
 }
 
-func (c *Client) leaseMutationAction(ctx context.Context, workloadID, method string) error {
+func (c *Client) CreateOrExtendWorkloadLease(ctx context.Context, workloadID string) error {
 	resp, err := c.httpClient.R().
 		SetContext(ctx).
 		SetHeader("Accept", "application/json").
 		SetQueryParam("node_id", "some-node-uuid"). // TODO: replace set node id on start and store in interactor
-		Execute(method, c.baseURL+"/api/v1/workloads/"+workloadID+"/lease")
+		Execute(http.MethodPut, c.baseURL+"/api/v1/workloads/"+workloadID+"/lease")
 	if err != nil {
-		return domain.ErrorBaseWorkloadInternal.Join(err)
+		return domain.ErrorBaseWorkloadInternal.Wrap(err)
 	}
 
 	if statusCode := resp.StatusCode(); statusCode != http.StatusOK {
@@ -52,12 +52,4 @@ func (c *Client) leaseMutationAction(ctx context.Context, workloadID, method str
 	}
 
 	return nil
-}
-
-func (c *Client) CreateWorkloadLease(ctx context.Context, workloadID string) error {
-	return c.leaseMutationAction(ctx, workloadID, http.MethodPost)
-}
-
-func (c *Client) ExtendWorkloadLease(ctx context.Context, workloadID string) error {
-	return c.leaseMutationAction(ctx, workloadID, http.MethodPut)
 }

@@ -8,6 +8,7 @@ import (
 	dockerclient "github.com/docker/docker/client"
 	"github.com/wernsiet/morchy/pkg/agent/implementation/controlplane"
 	"github.com/wernsiet/morchy/pkg/agent/implementation/repository/workload"
+	"github.com/wernsiet/morchy/pkg/agent/implementation/supervisor"
 	"github.com/wernsiet/morchy/pkg/agent/usecase"
 	"github.com/wernsiet/morchy/pkg/runtime"
 
@@ -49,19 +50,23 @@ func newWorkloadRepository(cfg *Config) *workload.Repository {
 	return repo
 }
 
+func newWorkloadSupervisor() *supervisor.WorkloadSupervisor {
+	return supervisor.NewSupervisor()
+}
+
 func newHandler(
 	logger *zap.Logger,
 	cp *controlplane.Client,
 	rt *runtime.Client,
 	repo *workload.Repository,
+	wlSupervisor *supervisor.WorkloadSupervisor,
 ) usecase.Handler {
-	return usecase.NewHandler(logger, cp, rt, repo)
+	return usecase.NewHandler(logger, cp, rt, repo, wlSupervisor)
 }
 
 func runLoop(lc fx.Lifecycle, logger *zap.Logger, h usecase.Handler) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			logger.Info("runLoop OnStart: launching background worker")
 			go func() {
 				err := h.LoadCurrentState(ctx)
 				if err != nil {

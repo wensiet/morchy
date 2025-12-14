@@ -5,7 +5,7 @@ import "github.com/wernsiet/morchy/pkg/runtime"
 type Repository interface {
 	GetWorkload(id string) (*Workload, error)
 	ListWorkloads() []*Workload
-	SaveWorklod(w Workload) (*Workload, error)
+	SaveWorkload(w Workload) (*Workload, error)
 	RemoveWorkload(id string)
 
 	GetResourceLimits() *runtime.ResourceLimits
