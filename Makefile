@@ -1,5 +1,6 @@
 swagger:
 	swag init -g ./cmd/controlplane/main.go --parseInternal
+	swagger-codegen generate -i docs/swagger.yaml -l go -o ./pkg/mctl/generated/controlplane.go
 
 start-controlplane-dev: swagger
 	go run cmd/controlplane/main.go --db "postgres://user:pass@localhost:5432/database?sslmode=disable"
