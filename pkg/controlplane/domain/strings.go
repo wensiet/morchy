@@ -14,6 +14,7 @@ const (
 	SUnknown    = "unknown"
 	SReason     = "reason"
 	SValidation = "validation"
+	SUpdatedAt  = "updated_at"
 
 	SWorkload   = "workload"
 	SWorkloadID = "workload_id"

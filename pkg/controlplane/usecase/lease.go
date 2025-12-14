@@ -39,7 +39,7 @@ func (i *interactor) CreateOrExtendLease(ctx context.Context, nodeId, workloadId
 		logger.Error("failed to upsert lease", zap.Error(err))
 		return nil, err
 	}
-	logger.Info("upserted lease")
+	logger.Info("upserted lease", zap.Time(domain.SUpdatedAt, lease.UpdatedAt))
 
 	return lease, nil
 }

@@ -54,7 +54,7 @@ func (i *interactor) LoadCurrentState(ctx context.Context) error {
 		loadedWorkloads = append(loadedWorkloads, domainWorkload)
 	}
 
-	logger.Info("successfully loaded current state", zap.Int("loaded_workloads", len(loadedWorkloads)))
+	logger.Info("loaded current state", zap.Int("loaded_workloads", len(loadedWorkloads)))
 
 	return nil
 }
@@ -74,7 +74,7 @@ func (i *interactor) ApplyWorkloadJoin(ctx context.Context) error {
 		return err
 	}
 
-	i.logger.Info("successfully joined workload", zap.String(domain.SUsecase, domain.SApplyWorkloadJoin), zap.String(domain.SWorkloadID, chosenWorkload.ID))
+	i.logger.Info("joined workload", zap.String(domain.SUsecase, domain.SApplyWorkloadJoin), zap.String(domain.SWorkloadID, chosenWorkload.ID))
 
 	return nil
 }

@@ -17,14 +17,16 @@ const (
 	SApplyWorkloadJoin = "ApplyWorkloadJoin"
 	SLoadCurrentState  = "LoadCurrentState"
 
-	SUsecase = "usecase"
-	SDomain  = "domain"
-	SReason  = "reason"
-	SManager = "manager"
+	SUsecase  = "usecase"
+	SDomain   = "domain"
+	SReason   = "reason"
+	SManager  = "manager"
+	SDuration = "duration"
 
 	SHealthy = "healthy"
 	SRunning = "running"
 
-	SWorkload   = "workload"
-	SWorkloadID = "workload_id"
+	SWorkload       = "workload"
+	SWorkloadID     = "workload_id"
+	SWorkloadStatus = "workload_status"
 )

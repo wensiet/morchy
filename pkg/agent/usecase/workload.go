@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"time"
 
 	"github.com/samber/oops"
 	"github.com/wernsiet/morchy/pkg/agent/domain"
@@ -89,6 +90,7 @@ func (i *interactor) runWorkload(ctx context.Context, workloadContainer runtime.
 }
 
 func (i *interactor) ReconcileWorkload(ctx context.Context, wl workload.Workload) error {
+	startTime := time.Now()
 	status, err := i.runtimeClient.GetContainerStatus(ctx, wl.Container.Name)
 	if err != nil {
 		return err
@@ -113,5 +115,12 @@ func (i *interactor) ReconcileWorkload(ctx context.Context, wl workload.Workload
 		}
 		return err
 	}
+
+	i.logger.Info(
+		"reconciled workload",
+		zap.String(domain.SWorkloadID, wl.ID),
+		zap.String(domain.SWorkloadStatus, status),
+		zap.Duration(domain.SDuration, time.Since(startTime)),
+	)
 	return nil
 }
