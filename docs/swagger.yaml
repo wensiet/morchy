@@ -135,9 +135,7 @@ paths:
           description: OK
           schema:
             items:
-              items:
-                $ref: '#/definitions/jsonformatter.WorkloadResponse'
-              type: array
+              $ref: '#/definitions/jsonformatter.WorkloadResponse'
             type: array
         "400":
           description: Invalid request parameters

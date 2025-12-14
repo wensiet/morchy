@@ -18,7 +18,7 @@ import (
 //	@Param			status	query		string	false	"Filter by workload status"		example(new)
 //	@Param			cpu		query		int		false	"Filter by CPU (millicores)"	example(100)
 //	@Param			ram		query		int		false	"Filter by RAM (MB)"			example(256)
-//	@Success		200		{array}		[]jsonformatter.WorkloadResponse
+//	@Success		200		{array}		jsonformatter.WorkloadResponse
 //	@Failure		400		{object}	map[string]string	"Invalid request parameters"
 //	@Failure		500		{object}	map[string]string	"Internal server error"
 //	@Router			/api/v1/workloads [get]

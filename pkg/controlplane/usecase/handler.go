@@ -8,13 +8,6 @@ import (
 	"go.uber.org/zap"
 )
 
-type NodeLogic interface {
-	NodeDiscover(context.Context, runtime.ResourceLimits)
-	NodeLaunch(context.Context, workload.Workload)
-	NodeTerminate(context.Context, workload.Workload)
-	NodeAck(context.Context, string)
-}
-
 type WorkloadLogic interface {
 	ListWorkloads(ctx context.Context, statusEq *string, resourceLte *runtime.ResourceLimits) ([]*workload.Workload, error)
 	GetWorkload(context.Context, string) (*workload.Workload, error)
