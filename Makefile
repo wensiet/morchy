@@ -10,3 +10,4 @@ start-agent-dev:
 build:
 	go build -o bin/controlplane cmd/controlplane/main.go
 	go build -o bin/agent cmd/agent/main.go
+	go build -o bin/mctl cmd/mctl/main.go
