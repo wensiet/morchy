@@ -108,3 +108,26 @@ func (rh *RouterHandler) createWorkload(c *gin.Context) {
 	workloadApiModel := jsonformatter.NewWorkloadResponseFromDomain(createdWorkload)
 	c.JSON(http.StatusCreated, workloadApiModel)
 }
+
+// deleteWorkload godoc
+//
+//	@Summary		Delete workload
+//	@Description	Delete a workload and all related models (lease, spec)
+//	@Tags			workloads
+//	@Accept			json
+//	@Produce		json
+//	@Param			workload_id	path	string	true	"Workload ID"	minlength(1)
+//	@Success		204
+//	@Failure		400	{object}	map[string]string	"Invalid request parameters"
+//	@Failure		500	{object}	map[string]string	"Internal server error"
+//	@Router			/api/v1/workloads/{workload_id} [delete]
+func (rh *RouterHandler) deleteWorkload(c *gin.Context) {
+	workloadID := c.Param("workload_id")
+
+	if err := rh.ucHandler.DeleteWorkload(c, workloadID); err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}

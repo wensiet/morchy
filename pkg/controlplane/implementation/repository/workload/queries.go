@@ -109,3 +109,15 @@ func (q queries) SelectWorkloadByID() string {
 func (q queries) SaveEvent() string {
 	return "INSERT INTO event (id, source_id, node_id, payload, produced_at) VALUES ($1, $2, $3, $4, $5)"
 }
+
+func (q queries) DeleteLeaseByWorkload() string {
+	return "DELETE FROM lease WHERE workload_id = $1"
+}
+
+func (q queries) DeleteSpecByID() string {
+	return "DELETE FROM spec WHERE id = $1"
+}
+
+func (q queries) DeleteWorkload() string {
+	return "DELETE FROM workload WHERE id = $1"
+}

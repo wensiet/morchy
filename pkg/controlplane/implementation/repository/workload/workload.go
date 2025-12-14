@@ -123,3 +123,33 @@ func (r *Repository) CreateWorkload(ctx context.Context, domainWorkload workload
 func (r *Repository) GetWorkload(ctx context.Context, workloadID string) (*workload.Workload, error) {
 	return r.workloadPrimitiveSelect(ctx, r.queries.SelectWorkloadByID(), workloadID)
 }
+
+func (r *Repository) DeleteWorkload(ctx context.Context, workloadID string) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return domain.ErrorWorkloadRepositoryInternalError.Wrap(err)
+	}
+	defer tx.Rollback(ctx)
+
+	if _, err := tx.Exec(ctx, r.queries.DeleteLeaseByWorkload(), workloadID); err != nil {
+		return domain.ErrorWorkloadRepositoryInternalError.Wrap(err)
+	}
+
+	if _, err := tx.Exec(ctx, r.queries.DeleteSpecByID(), workloadID); err != nil {
+		return domain.ErrorWorkloadRepositoryInternalError.Wrap(err)
+	}
+
+	cmdTag, err := tx.Exec(ctx, r.queries.DeleteWorkload(), workloadID)
+	if err != nil {
+		return domain.ErrorWorkloadRepositoryInternalError.Wrap(err)
+	}
+	if cmdTag.RowsAffected() == 0 {
+		return domain.ErrorWorkloadRepositoryNotFound.New("workload not found")
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return domain.ErrorWorkloadRepositoryInternalError.Wrap(err)
+	}
+
+	return nil
+}

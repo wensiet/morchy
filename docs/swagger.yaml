@@ -188,6 +188,37 @@ paths:
       tags:
       - workloads
   /api/v1/workloads/{workload_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a workload and all related models (lease, spec)
+      parameters:
+      - description: Workload ID
+        in: path
+        minLength: 1
+        name: workload_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete workload
+      tags:
+      - workloads
     get:
       consumes:
       - application/json

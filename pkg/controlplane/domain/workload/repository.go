@@ -10,6 +10,7 @@ type Repository interface {
 	ListWorkloads(context.Context, *string, *runtime.ResourceLimits) ([]*Workload, error)
 	CreateWorkload(context.Context, Workload) (*Workload, error)
 	GetWorkload(context.Context, string) (*Workload, error)
+	DeleteWorkload(ctx context.Context, workloadID string) error
 
 	GetLease(context.Context, string, string) (*Lease, error)
 	CreateLease(context.Context, string, string) (*Lease, error)

@@ -58,3 +58,19 @@ func (i *interactor) ListWorkloads(ctx context.Context, statusEq *string, resour
 	}
 	return workloads, err
 }
+
+func (i *interactor) DeleteWorkload(ctx context.Context, workloadID string) error {
+	logger := i.logger.With(
+		zap.String(domain.SDomain, domain.SWorkload),
+		zap.String(domain.SWorkloadID, workloadID),
+	)
+
+	if err := i.wokrloadRepo.DeleteWorkload(ctx, workloadID); err != nil {
+		if oopsErr, ok := oops.AsOops(err); ok && oopsErr.Code() == string(domain.NotFound) {
+			return err
+		}
+		logger.Error("failed to delete workload", zap.Error(err))
+		return err
+	}
+	return nil
+}
