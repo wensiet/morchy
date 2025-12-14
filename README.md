@@ -4,7 +4,7 @@
 
 ---
 
-Morchy is a lightweight, stateless workloads orchestration platform built around a pull-model for agents.
+Morchy is a lightweight, stateless workloads orchestration platform built around a pull-model based node agents.
 
 **Overview:**
 
