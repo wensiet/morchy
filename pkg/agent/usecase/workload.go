@@ -3,9 +3,11 @@ package usecase
 import (
 	"context"
 
+	"github.com/samber/oops"
 	"github.com/wernsiet/morchy/pkg/agent/domain"
 	"github.com/wernsiet/morchy/pkg/agent/domain/workload"
 	apitypes "github.com/wernsiet/morchy/pkg/controlplane/implementation/jsonformatter"
+	"github.com/wernsiet/morchy/pkg/runtime"
 	"go.uber.org/zap"
 )
 
@@ -37,14 +39,10 @@ func (i *interactor) CreateWorkload(ctx context.Context, chosenWorkload apitypes
 		domain.SManager:    domain.SAppName,
 	}
 
-	containerID, err := i.runtimeClient.CreateContainer(ctx, chosenWorkload.Container)
+	err := i.runWorkload(ctx, chosenWorkload.Container)
 	if err != nil {
-		return domain.ErrorBaseWorkloadInternal.With(domain.SWorkload, chosenWorkload.ID).
-			Wrapf(err, "error while creating runtime container")
-	}
-
-	if err := i.runtimeClient.StartContainer(ctx, containerID); err != nil {
-		return domain.ErrorBaseWorkloadInternal.With(domain.SWorkload, chosenWorkload.ID).
+		return domain.ErrorBaseWorkloadInternal.
+			With(domain.SWorkload, chosenWorkload.ID).
 			Wrapf(err, "error while starting runtime container")
 	}
 
@@ -71,11 +69,23 @@ func (i *interactor) CreateWorkload(ctx context.Context, chosenWorkload apitypes
 }
 
 func (i *interactor) terminateWorkload(ctx context.Context, w workload.Workload) error {
-	i.logger.Info("terminating workload", zap.String(domain.SWorkloadID, w.ID))
 	_ = i.runtimeClient.StopContainer(ctx, w.Container.Name)
-	_ = i.runtimeClient.RemoveContainer(ctx, w.Container.Name) // TODO: push event or panic
+	err := i.runtimeClient.RemoveContainer(ctx, w.Container.Name) // TODO: push event or panic
+	if err != nil {
+		i.logger.Error("failed to terminate workload", zap.String(domain.SWorkloadID, w.ID), zap.Error(err))
+	} else {
+		i.logger.Info("terminated workload", zap.String(domain.SWorkloadID, w.ID))
+	}
 	i.workloadRepo.RemoveWorkload(w.ID)
 	return nil
+}
+
+func (i *interactor) runWorkload(ctx context.Context, workloadContainer runtime.Container) error {
+	containerID, err := i.runtimeClient.CreateContainer(ctx, workloadContainer)
+	if err != nil {
+		return err
+	}
+	return i.runtimeClient.StartContainer(ctx, containerID)
 }
 
 func (i *interactor) ReconcileWorkload(ctx context.Context, wl workload.Workload) error {
@@ -83,15 +93,22 @@ func (i *interactor) ReconcileWorkload(ctx context.Context, wl workload.Workload
 	if err != nil {
 		return err
 	}
-	if status != domain.SRunning {
-		i.stopWorkloadLifecycle(ctx, wl)
-		err = i.terminateWorkload(ctx, wl) // TODO: push event
-		if err != nil {
-			i.logger.Error("unable to terminate workload", zap.Error(err))
+
+	err = func() error {
+		if status != domain.SRunning {
+			return domain.ErrorBaseWorkloadHealthcheckFailed.
+				With(domain.SWorkload, wl.ID).
+				Errorf("container status: %s", status)
 		}
-		return domain.ErrorBaseWorkloadHealthcheckFailed.
-			With(domain.SWorkload, wl.ID).
-			Errorf("container status: %s", status)
+		return i.controlplaneClient.CreateOrExtendWorkloadLease(ctx, wl.ID)
+	}()
+
+	if err != nil {
+		oopsErr, ok := oops.AsOops(err)
+		if !ok || oopsErr.Code() == domain.SHealthcheckFailed || oopsErr.Code() == domain.SOwnedByAnotherNode {
+			_ = i.stopWorkloadLifecycle(ctx, wl) // TODO: push event
+		}
+		return err
 	}
-	return i.controlplaneClient.CreateOrExtendWorkloadLease(ctx, wl.ID)
+	return nil
 }

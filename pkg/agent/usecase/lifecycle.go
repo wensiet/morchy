@@ -29,6 +29,9 @@ func (i *interactor) startWorklodLifecycle(ctx context.Context, wl workload.Work
 	return nil
 }
 
-func (i *interactor) stopWorkloadLifecycle(ctx context.Context, wl workload.Workload) {
+func (i *interactor) stopWorkloadLifecycle(ctx context.Context, wl workload.Workload) error {
+	err := i.terminateWorkload(ctx, wl)
 	i.workloadSupervisor.Stop(infrastructure.TaskID(wl.ID))
+	_ = i.controlplaneClient.DeleteWorkloadLease(ctx, wl.ID)
+	return err
 }

@@ -14,6 +14,7 @@ type Repository interface {
 	GetLease(context.Context, string, string) (*Lease, error)
 	CreateLease(context.Context, string, string) (*Lease, error)
 	DeleteExpiredLeases(context.Context, int) error
+	DeleteLease(context.Context, string, string) error
 	UpdateLease(context.Context, string, string) error
 	UpsertLease(ctx context.Context, nodeID string, workloadID string) (*Lease, error)
 

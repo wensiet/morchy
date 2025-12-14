@@ -56,3 +56,18 @@ func (i *interactor) ExpireLeases(ctx context.Context) error {
 	}
 	return nil
 }
+
+func (i *interactor) DeleteLease(ctx context.Context, nodeId, workloadId string) error {
+	logger := i.logger.With(
+		zap.String(domain.SDomain, domain.SWorkload),
+		zap.String(domain.SNodeID, nodeId),
+		zap.String(domain.SWorkloadID, workloadId),
+	)
+
+	if err := i.wokrloadRepo.DeleteLease(ctx, nodeId, workloadId); err != nil {
+		logger.Error("failed to delete lease", zap.Error(err))
+		return err
+	}
+	logger.Info("deleted lease")
+	return nil
+}

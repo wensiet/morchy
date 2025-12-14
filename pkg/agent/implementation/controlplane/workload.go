@@ -53,3 +53,26 @@ func (c *Client) CreateOrExtendWorkloadLease(ctx context.Context, workloadID str
 
 	return nil
 }
+
+func (c *Client) DeleteWorkloadLease(ctx context.Context, workloadID string) error {
+	resp, err := c.httpClient.R().
+		SetContext(ctx).
+		SetHeader("Accept", "application/json").
+		SetQueryParam("node_id", "some-node-uuid"). // TODO: replace set node id on start and store in interactor
+		Execute(http.MethodDelete, c.baseURL+"/api/v1/workloads/"+workloadID+"/lease")
+	if err != nil {
+		return domain.ErrorBaseWorkloadInternal.Wrap(err)
+	}
+
+	if statusCode := resp.StatusCode(); statusCode != http.StatusNoContent {
+		if statusCode == http.StatusNotFound {
+			return domain.ErrorWorkloadTerminatedOnControlPlane.Errorf("workload %s was not found on control-plane, treat it as terminated", workloadID)
+		}
+		if statusCode == http.StatusConflict && strings.Contains(resp.String(), domain.SOwnedByAnotherNode) {
+			return domain.ErrorWorkloadOwnedByAnotherNode.Errorf("workload %s is owned by another node", workloadID)
+		}
+		return domain.ErrorBaseWorkloadInternal.Errorf("got unexpected status code for workload id=%s lease deletion", workloadID)
+	}
+
+	return nil
+}

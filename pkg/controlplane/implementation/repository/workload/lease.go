@@ -54,3 +54,7 @@ func (r *Repository) UpsertLease(ctx context.Context, nodeID string, workloadID 
 	}
 	return lease, nil
 }
+
+func (r *Repository) DeleteLease(ctx context.Context, nodeId, workloadId string) error {
+	return r.leasePrimitiveExec(ctx, r.queries.DeleteLease(), nodeId, workloadId)
+}

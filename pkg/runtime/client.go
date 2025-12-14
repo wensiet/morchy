@@ -18,12 +18,14 @@ type RuntimeClient interface {
 }
 
 type Client struct {
-	dockerAPI *client.Client
+	dockerAPI   *client.Client
+	stopTimeout int
 }
 
 func NewClient(dockerAPI *client.Client) *Client {
 	return &Client{
-		dockerAPI: dockerAPI,
+		dockerAPI:   dockerAPI,
+		stopTimeout: 1,
 	}
 }
 
@@ -66,7 +68,7 @@ func buildEnv(envs []EnvVar) []string {
 }
 
 func (c *Client) StopContainer(ctx context.Context, id string) error {
-	return c.dockerAPI.ContainerStop(ctx, id, container.StopOptions{})
+	return c.dockerAPI.ContainerStop(ctx, id, container.StopOptions{Timeout: &c.stopTimeout})
 }
 
 func (c *Client) RemoveContainer(ctx context.Context, id string) error {

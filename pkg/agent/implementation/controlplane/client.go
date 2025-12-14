@@ -11,6 +11,7 @@ import (
 type ControlPlaneClient interface {
 	ListAvailableWorkloads(context.Context, runtime.ResourceLimits) ([]*apitypes.WorkloadResponse, error)
 	CreateOrExtendWorkloadLease(context.Context, string) error
+	DeleteWorkloadLease(context.Context, string) error
 }
 
 type Client struct {
@@ -18,9 +19,9 @@ type Client struct {
 	httpClient *resty.Client
 }
 
-func NewClient(httpClient *resty.Client, baesURL string) *Client {
+func NewClient(httpClient *resty.Client, baseURL string) *Client {
 	return &Client{
 		httpClient: httpClient,
-		baseURL:    baesURL,
+		baseURL:    baseURL,
 	}
 }

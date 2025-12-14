@@ -70,6 +70,10 @@ func (q queries) UpsertLease() string {
 	`
 }
 
+func (q queries) DeleteLease() string {
+	return "DELETE FROM lease WHERE node_id = $1 AND workload_id = $2"
+}
+
 func (q queries) SelectWorkloadByID() string {
 	return "SELECT w.id, w.status, w.created_at, w.container FROM workload w WHERE w.id = $1"
 }

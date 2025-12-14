@@ -42,21 +42,16 @@ func (i *interactor) LoadCurrentState(ctx context.Context) error {
 			return domain.ErrorBaseWorkloadInternal.
 				Wrapf(err, "error while saving runtime containers")
 		}
-		loadedWorkloads = append(loadedWorkloads, domainWorkload)
-	}
 
-	for _, wl := range loadedWorkloads {
-		if err := i.controlplaneClient.CreateOrExtendWorkloadLease(ctx, wl.ID); err != nil {
-			_ = i.terminateWorkload(ctx, *wl) // TODO: push event
-			continue
-		}
-		if err := i.startWorklodLifecycle(ctx, *wl); err != nil {
+		if err := i.startWorklodLifecycle(ctx, *domainWorkload); err != nil {
 			oopsErr, ok := oops.AsOops(err)
 			if !ok || oopsErr.Code() != domain.SHealthcheckFailed {
-				return domain.ErrorBaseWorkloadInternal.With(domain.SWorkload, wl.ID).
+				return domain.ErrorBaseWorkloadInternal.With(domain.SWorkload, domainWorkload.ID).
 					Wrapf(err, "error on starting workload lifecycle")
 			}
 		}
+
+		loadedWorkloads = append(loadedWorkloads, domainWorkload)
 	}
 
 	logger.Info("successfully loaded current state", zap.Int("loaded_workloads", len(loadedWorkloads)))
