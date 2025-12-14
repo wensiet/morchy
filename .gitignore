@@ -34,3 +34,4 @@ go.work.sum
 cmd/local/
 
 bin/
+sandbox/

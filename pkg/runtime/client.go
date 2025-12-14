@@ -93,6 +93,7 @@ func (c *Client) ListContainers(ctx context.Context, listFitlers *ContainerFilte
 		ctx,
 		container.ListOptions{
 			Filters: dockerFilters,
+			All:     true,
 		},
 	)
 	if err != nil {

@@ -27,34 +27,21 @@ func (i *interactor) GetLeaseByNodeAndWorkloadID(ctx context.Context, nodeId, wo
 	return lease, nil
 }
 
-func (i *interactor) CreateLease(ctx context.Context, nodeId, workloadId string) (*workload.Lease, error) {
+func (i *interactor) CreateOrExtendLease(ctx context.Context, nodeId, workloadId string) (*workload.Lease, error) {
 	logger := i.logger.With(
 		zap.String(domain.SDomain, domain.SWorkload),
 		zap.String(domain.SNodeID, nodeId),
 		zap.String(domain.SWorkloadID, workloadId),
 	)
 
-	lease, err := i.wokrloadRepo.CreateLease(ctx, nodeId, workloadId)
+	lease, err := i.wokrloadRepo.UpsertLease(ctx, nodeId, workloadId)
 	if err != nil {
-		logger.Error("failed to create lease", zap.Error(err))
+		logger.Error("failed to upsert lease", zap.Error(err))
 		return nil, err
 	}
+	logger.Info("upserted lease")
+
 	return lease, nil
-}
-
-func (i *interactor) ExtendLease(ctx context.Context, nodeId, workloadId string) error {
-	logger := i.logger.With(
-		zap.String(domain.SDomain, domain.SWorkload),
-		zap.String(domain.SNodeID, nodeId),
-		zap.String(domain.SWorkloadID, workloadId),
-	)
-
-	err := i.wokrloadRepo.UpdateLease(ctx, nodeId, workloadId)
-	if err != nil {
-		logger.Error("failed to update lease", zap.Error(err))
-		return nil
-	}
-	return err
 }
 
 func (i *interactor) ExpireLeases(ctx context.Context) error {

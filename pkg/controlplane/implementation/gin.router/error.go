@@ -13,6 +13,10 @@ func mapStatusCode(status string) int {
 	switch status {
 	case string(domain.NotFound):
 		return http.StatusNotFound
+	case string(domain.BadRequest):
+		return http.StatusBadRequest
+	case string(domain.Conflict):
+		return http.StatusConflict
 	default:
 		return http.StatusInternalServerError
 	}

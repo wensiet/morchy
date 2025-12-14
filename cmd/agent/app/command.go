@@ -27,6 +27,7 @@ func NewAgentCommand() *cobra.Command {
 					newHTTPClient,
 					newControlPlaneClient,
 					newWorkloadRepository,
+					newWorkloadSupervisor,
 					newHandler,
 				),
 				fx.WithLogger(

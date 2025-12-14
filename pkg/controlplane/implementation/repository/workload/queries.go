@@ -58,6 +58,18 @@ func (q queries) UpdateLeaseUpdatedAt() string {
 	return "UPDATE lease SET updated_at = NOW() WHERE node_id = $1 AND workload_id = $2"
 }
 
+func (q queries) UpsertLease() string {
+	return `
+		INSERT INTO lease (node_id, workload_id)
+		VALUES ($1, $2)
+		ON CONFLICT (workload_id)
+		DO UPDATE
+		SET updated_at = NOW()
+		WHERE lease.node_id = EXCLUDED.node_id
+		RETURNING node_id, workload_id, created_at, updated_at;
+	`
+}
+
 func (q queries) SelectWorkloadByID() string {
 	return "SELECT w.id, w.status, w.created_at, w.container FROM workload w WHERE w.id = $1"
 }

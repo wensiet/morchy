@@ -5,6 +5,7 @@ import (
 
 	"github.com/wernsiet/morchy/pkg/agent/domain/workload"
 	"github.com/wernsiet/morchy/pkg/agent/implementation/controlplane"
+	"github.com/wernsiet/morchy/pkg/agent/infrastructure"
 	"github.com/wernsiet/morchy/pkg/runtime"
 	"go.uber.org/zap"
 )
@@ -23,6 +24,7 @@ type interactor struct {
 	controlplaneClient controlplane.ControlPlaneClient
 	runtimeClient      runtime.RuntimeClient
 	workloadRepo       workload.Repository
+	workloadSupervisor infrastructure.TaskSupervisor[workload.Workload]
 }
 
 func NewHandler(
@@ -30,11 +32,13 @@ func NewHandler(
 	controlplaneClient controlplane.ControlPlaneClient,
 	runtimeClient runtime.RuntimeClient,
 	workloadRepo workload.Repository,
+	workloadSupervisor infrastructure.TaskSupervisor[workload.Workload],
 ) Handler {
 	return &interactor{
 		logger:             logger,
 		controlplaneClient: controlplaneClient,
 		runtimeClient:      runtimeClient,
 		workloadRepo:       workloadRepo,
+		workloadSupervisor: workloadSupervisor,
 	}
 }

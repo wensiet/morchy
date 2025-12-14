@@ -22,8 +22,7 @@ type WorkloadLogic interface {
 }
 
 type LeaseLogic interface {
-	CreateLease(context.Context, string, string) (*workload.Lease, error)
-	ExtendLease(context.Context, string, string) error
+	CreateOrExtendLease(context.Context, string, string) (*workload.Lease, error)
 	GetLeaseByNodeAndWorkloadID(context.Context, string, string) (*workload.Lease, error)
 	ExpireLeases(context.Context) error
 }

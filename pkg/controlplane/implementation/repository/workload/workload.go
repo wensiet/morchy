@@ -44,7 +44,7 @@ func (r *Repository) ListWorkloads(ctx context.Context, status *string, resource
 	return workloads, nil
 }
 
-func (r *Repository) CreateWorklod(ctx context.Context, domainWorkload workload.Workload) (*workload.Workload, error) {
+func (r *Repository) CreateWorkload(ctx context.Context, domainWorkload workload.Workload) (*workload.Workload, error) {
 	containerJSON, err := json.Marshal(domainWorkload.Spec.Container)
 	if err != nil {
 		return nil, domain.ErrorWorkloadRepositoryInternalError.Wrap(err)
