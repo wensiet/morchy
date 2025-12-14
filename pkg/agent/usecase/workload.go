@@ -98,7 +98,10 @@ func (i *interactor) ReconcileWorkload(ctx context.Context, wl workload.Workload
 
 	err = func() error {
 		if status != domain.SRunning {
-			// TODO: push event
+			i.asyncPushEvent(ctx, workload.EventPayload{
+				Action: domain.SHealthcheck,
+				Status: domain.EventActionStatusFailed,
+			})
 			return domain.ErrorBaseWorkloadHealthcheckFailed.
 				With(domain.SWorkload, wl.ID).
 				Errorf("container status: %s", status)

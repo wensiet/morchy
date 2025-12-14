@@ -39,7 +39,11 @@ This will start the service and any required infrastructure defined in `docker-c
 Run the app directly (development):
 
 ```bash
-go run ./cmd/app
+make start-controlplane-dev
+```
+
+```bash
+make start-agent-dev
 ```
 
 Environment:
@@ -51,10 +55,10 @@ Environment:
 
 - Project layout highlights:
 	- `cmd/` — application entrypoints (`cmd/app` for the server, `local` for local runner)
-	- `internal/` — main application code (domain, implementations, infra)
 	- `usecase/` — use case handlers
 	- `migrations/` — SQL migrations
-	- `pkg/` — reusable packages (DB utils, workload types)
+	- `pkg/agent` — implementation of the node agent
+	- `pkg/controlplane` - implementation of the control-plane
 
 - Run Go tools and tests:
 

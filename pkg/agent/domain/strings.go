@@ -1,5 +1,12 @@
 package domain
 
+type EventActionStatus string
+
+const (
+	EventActionStatusSuccess EventActionStatus = "success"
+	EventActionStatusFailed  EventActionStatus = "failed"
+)
+
 const (
 	SAppName = "morchy"
 
@@ -17,11 +24,12 @@ const (
 	SApplyWorkloadJoin = "ApplyWorkloadJoin"
 	SLoadCurrentState  = "LoadCurrentState"
 
-	SUsecase  = "usecase"
-	SDomain   = "domain"
-	SReason   = "reason"
-	SManager  = "manager"
-	SDuration = "duration"
+	SUsecase     = "usecase"
+	SDomain      = "domain"
+	SReason      = "reason"
+	SManager     = "manager"
+	SDuration    = "duration"
+	SHealthcheck = "healthcheck"
 
 	SHealthy = "healthy"
 	SRunning = "running"

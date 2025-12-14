@@ -12,6 +12,7 @@ type ControlPlaneClient interface {
 	ListAvailableWorkloads(context.Context, runtime.ResourceLimits) ([]*apitypes.WorkloadResponse, error)
 	CreateOrExtendWorkloadLease(context.Context, string) error
 	DeleteWorkloadLease(context.Context, string) error
+	PushEvent(context.Context, apitypes.EventCreateRequest) error
 }
 
 type Client struct {

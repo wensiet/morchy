@@ -76,3 +76,21 @@ func (c *Client) DeleteWorkloadLease(ctx context.Context, workloadID string) err
 
 	return nil
 }
+
+func (c *Client) PushEvent(ctx context.Context, event apitypes.EventCreateRequest) error {
+	resp, err := c.httpClient.R().
+		SetContext(ctx).
+		SetHeader("Accept", "application/json").
+		SetQueryParam("node_id", c.nodeID).
+		SetBody(event).
+		Execute(http.MethodPost, c.baseURL+"/api/v1/events")
+	if err != nil {
+		return domain.ErrorBaseWorkloadInternal.Wrap(err)
+	}
+
+	if resp.StatusCode() != http.StatusCreated {
+		return domain.ErrorBaseWorkloadInternal.Errorf("unexpected status: %d", resp.StatusCode())
+	}
+
+	return nil
+}
