@@ -54,6 +54,7 @@ func NewAgentCommand() *cobra.Command {
 			return app.Stop(stopCtx)
 		},
 	}
+	root.Flags().StringVar(&cfg.NodeID, "node-id", "", "Node ID")
 	root.Flags().StringVar(&cfg.ControlPlaneURL, "controlplane", "", "ControlPlane URL")
 	root.Flags().UintVar(&cfg.ReservedRAM, "reserved-ram", 0, "Reserved RAM bytes")
 	root.Flags().UintVar(&cfg.ReservedCPU, "reserved-cpu", 0, "Reserved CPU units")

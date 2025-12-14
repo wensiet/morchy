@@ -38,7 +38,7 @@ func newHTTPClient() *resty.Client {
 }
 
 func newControlPlaneClient(cfg *Config, http *resty.Client) *controlplane.Client {
-	return controlplane.NewClient(http, cfg.ControlPlaneURL)
+	return controlplane.NewClient(http, cfg.ControlPlaneURL, cfg.NodeID)
 }
 
 func newWorkloadRepository(cfg *Config) *workload.Repository {

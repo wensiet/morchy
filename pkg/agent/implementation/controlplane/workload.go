@@ -35,7 +35,7 @@ func (c *Client) CreateOrExtendWorkloadLease(ctx context.Context, workloadID str
 	resp, err := c.httpClient.R().
 		SetContext(ctx).
 		SetHeader("Accept", "application/json").
-		SetQueryParam("node_id", "some-node-uuid"). // TODO: replace set node id on start and store in interactor
+		SetQueryParam("node_id", c.nodeID).
 		Execute(http.MethodPut, c.baseURL+"/api/v1/workloads/"+workloadID+"/lease")
 	if err != nil {
 		return domain.ErrorBaseWorkloadInternal.Wrap(err)
@@ -58,7 +58,7 @@ func (c *Client) DeleteWorkloadLease(ctx context.Context, workloadID string) err
 	resp, err := c.httpClient.R().
 		SetContext(ctx).
 		SetHeader("Accept", "application/json").
-		SetQueryParam("node_id", "some-node-uuid"). // TODO: replace set node id on start and store in interactor
+		SetQueryParam("node_id", c.nodeID).
 		Execute(http.MethodDelete, c.baseURL+"/api/v1/workloads/"+workloadID+"/lease")
 	if err != nil {
 		return domain.ErrorBaseWorkloadInternal.Wrap(err)

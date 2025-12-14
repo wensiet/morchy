@@ -17,11 +17,13 @@ type ControlPlaneClient interface {
 type Client struct {
 	baseURL    string
 	httpClient *resty.Client
+	nodeID     string
 }
 
-func NewClient(httpClient *resty.Client, baseURL string) *Client {
+func NewClient(httpClient *resty.Client, baseURL string, nodeID string) *Client {
 	return &Client{
 		httpClient: httpClient,
 		baseURL:    baseURL,
+		nodeID:     nodeID,
 	}
 }
