@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
+	"time"
 
 	"github.com/samber/oops"
 	"github.com/wernsiet/morchy/pkg/controlplane/domain"
@@ -34,11 +36,41 @@ func (i *interactor) CreateOrExtendLease(ctx context.Context, nodeId, workloadId
 		zap.String(domain.SWorkloadID, workloadId),
 	)
 
-	lease, err := i.wokrloadRepo.UpsertLease(ctx, nodeId, workloadId)
+	tx, err := i.dbPool.Begin(ctx)
+	defer tx.Rollback(ctx)
+	if err != nil {
+		logger.Error("failed to start transaction", zap.Error(err))
+		return nil, domain.ErrorWorkloadRepositoryInternalError.Wrap(err)
+	}
+
+	repo := i.repositoryFactory.New(tx)
+
+	lease, err := repo.UpsertLease(ctx, nodeId, workloadId)
 	if err != nil {
 		logger.Error("failed to upsert lease", zap.Error(err))
 		return nil, err
 	}
+
+	// If lease created_at != updated_at it means that it was updated
+	// and we can say that workload healthcheck is successful
+	if !lease.CreatedAt.Truncate(time.Second).Equal(lease.UpdatedAt.Truncate(time.Second)) {
+		eventPayload := map[string]string{
+			domain.SWorkloadID: workloadId,
+			domain.SAction:     domain.SHealthcheck,
+			domain.SStatus:     domain.SSuccess,
+		}
+		jsonPayload, _ := json.Marshal(eventPayload)
+		repo.SaveEvent(
+			ctx, newEvent(nodeId, jsonPayload),
+		)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		logger.Error("failed to commit transaction", zap.Error(err))
+		return nil, domain.ErrorWorkloadRepositoryInternalError.Wrap(err)
+	}
+
 	logger.Info("upserted lease", zap.Time(domain.SUpdatedAt, lease.UpdatedAt))
 
 	return lease, nil

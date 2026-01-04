@@ -10,6 +10,7 @@ const (
 
 	SOwnedByAnotherNode = "owned_by_other_node"
 
+	SAction     = "action"
 	SDomain     = "domain"
 	SUnknown    = "unknown"
 	SReason     = "reason"
@@ -27,4 +28,10 @@ const (
 
 	SContainer     = "container"
 	SContainerName = "container_name"
+
+	SHealthcheck = "healthcheck"
+
+	SStatus = "status"
+
+	SSuccess = "success"
 )

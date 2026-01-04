@@ -62,8 +62,12 @@ func (q queries) CreateWorkloadSpec() string {
 	`
 }
 
-func (q queries) GetLease() string {
+func (q queries) GetLeaseByNodeAndWorkloadIDs() string {
 	return "SELECT node_id, workload_id, created_at, updated_at FROM lease WHERE node_id = $1 AND workload_id = $2"
+}
+
+func (q queries) GetLeaseByWorkloadID() string {
+	return "SELECT node_id, workload_id, created_at, updated_at FROM lease WHERE workload_id = $1"
 }
 
 func (q queries) CreateLease() string {
@@ -120,4 +124,28 @@ func (q queries) DeleteSpecByID() string {
 
 func (q queries) DeleteWorkload() string {
 	return "DELETE FROM workload WHERE id = $1"
+}
+
+func (q queries) SelectManyEvents(payloadFitlers map[string]string, limit int) (string, []any) {
+	query := `
+	SELECT 
+		e.id, e.source_id, e.node_id, e.payload, e.produced_at, e.created_at
+	FROM event e
+	`
+	baseOrdering := " ORDER BY e.created_at DESC"
+	baseLimitting := fmt.Sprintf(" LIMIT %d", limit)
+
+	var args []any
+	var conditions []string
+
+	for payloadField, value := range payloadFitlers {
+		conditions = append(conditions, fmt.Sprintf("e.payload->>'%s' = $%d", payloadField, len(args)+1))
+		args = append(args, value)
+	}
+
+	if len(conditions) > 0 {
+		query += " WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	return query + baseOrdering + baseLimitting, args
 }

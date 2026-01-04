@@ -1,7 +1,7 @@
 package workload
 
 import (
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/wernsiet/morchy/pkg/controlplane/domain/workload"
 	dbutils "github.com/wernsiet/morchy/pkg/db.utils"
 )
 
@@ -10,8 +10,14 @@ type Repository struct {
 	queries queries
 }
 
-func NewRepo(dbPool *pgxpool.Pool) *Repository {
+func NewRepo(dbPool dbutils.DB) *Repository {
 	return &Repository{
 		db: dbPool,
 	}
+}
+
+type WorkloadRepoFactory struct{}
+
+func (w WorkloadRepoFactory) New(db dbutils.DB) workload.Repository {
+	return NewRepo(db)
 }

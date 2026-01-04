@@ -25,7 +25,7 @@ func newLogger() (*zap.Logger, error) {
 func newDockerRuntime() (*runtime.Client, error) {
 	api, err := dockerclient.NewClientWithOpts(
 		dockerclient.WithHost(os.Getenv("DOCKER_HOST")),
-		dockerclient.WithVersion("1.47"),
+		dockerclient.WithAPIVersionNegotiation(),
 	)
 	if err != nil {
 		return nil, err

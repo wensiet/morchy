@@ -3,9 +3,12 @@ package workload
 type WorkloadStatus string
 
 const (
-	NewWorkloadStatus        WorkloadStatus = "new"
-	ActiveWorkloadStatus     WorkloadStatus = "active"
-	TerminatedWorkloadStatus WorkloadStatus = "terminated"
+	NewWorkloadStatus      WorkloadStatus = "new"
+	PendingWorkloadStatus  WorkloadStatus = "pending"
+	StuckWorkloadStatus    WorkloadStatus = "stuck"
+	ActiveWorkloadStatus   WorkloadStatus = "active"
+	FailedWorkloadStatus   WorkloadStatus = "failed"
+	DegradedWorkloadStatus WorkloadStatus = "degraded"
 )
 
 type Workload struct {

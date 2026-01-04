@@ -41,8 +41,8 @@ func newWorkloadRepository(dbPool *pgxpool.Pool) *workload.Repository {
 	return workload.NewRepo(dbPool)
 }
 
-func newUsecaseHandler(logger *zap.Logger, workloadRepo *workload.Repository) usecase.Handler {
-	return usecase.NewHandler(logger, workloadRepo)
+func newUsecaseHandler(logger *zap.Logger, workloadRepo *workload.Repository, dbPool *pgxpool.Pool) usecase.Handler {
+	return usecase.NewHandler(logger, workloadRepo, workload.WorkloadRepoFactory{}, dbPool)
 }
 
 func newRouter(logger *zap.Logger, ucHandler usecase.Handler) *gin.Engine {
