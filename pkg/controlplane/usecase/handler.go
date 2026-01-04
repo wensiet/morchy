@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/wernsiet/morchy/pkg/controlplane/domain/workload"
+	dbutils "github.com/wernsiet/morchy/pkg/db.utils"
 	"github.com/wernsiet/morchy/pkg/runtime"
 	"go.uber.org/zap"
 )
@@ -33,16 +34,22 @@ type Handler interface {
 }
 
 type interactor struct {
-	logger       *zap.Logger
-	wokrloadRepo workload.Repository
+	logger            *zap.Logger
+	dbPool            dbutils.DB
+	wokrloadRepo      workload.Repository
+	repositoryFactory workload.RepositoryFactory
 }
 
 func NewHandler(
 	logger *zap.Logger,
 	workloadRepo workload.Repository,
+	workloadRepoFactory workload.RepositoryFactory,
+	dbPool dbutils.DB,
 ) Handler {
 	return &interactor{
-		logger:       logger,
-		wokrloadRepo: workloadRepo,
+		logger:            logger,
+		wokrloadRepo:      workloadRepo,
+		repositoryFactory: workloadRepoFactory,
+		dbPool:            dbPool,
 	}
 }

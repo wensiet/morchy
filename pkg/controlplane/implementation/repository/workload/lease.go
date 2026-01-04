@@ -29,7 +29,7 @@ func (r *Repository) leasePrimitiveExec(ctx context.Context, query string, optio
 }
 
 func (r *Repository) GetLease(ctx context.Context, nodeId, workloadId string) (*workload.Lease, error) {
-	return r.leasePrimitiveSelect(ctx, r.queries.GetLease(), nodeId, workloadId)
+	return r.leasePrimitiveSelect(ctx, r.queries.GetLeaseByNodeAndWorkloadIDs(), nodeId, workloadId)
 }
 
 func (r *Repository) CreateLease(ctx context.Context, nodeId, workloadId string) (*workload.Lease, error) {
@@ -57,4 +57,8 @@ func (r *Repository) UpsertLease(ctx context.Context, nodeID string, workloadID 
 
 func (r *Repository) DeleteLease(ctx context.Context, nodeId, workloadId string) error {
 	return r.leasePrimitiveExec(ctx, r.queries.DeleteLease(), nodeId, workloadId)
+}
+
+func (r *Repository) GetLeaseByWorkloadID(ctx context.Context, workloadID string) (*workload.Lease, error) {
+	return r.leasePrimitiveSelect(ctx, r.queries.GetLeaseByWorkloadID(), workloadID)
 }

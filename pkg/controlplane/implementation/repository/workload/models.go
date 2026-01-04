@@ -1,6 +1,7 @@
 package workload
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/wernsiet/morchy/pkg/controlplane/domain/workload"
@@ -51,5 +52,25 @@ func (l *dbLease) ToDomain() *workload.Lease {
 		WorkloadID: l.WorkloadID,
 		CreatedAt:  l.CreatedAt,
 		UpdatedAt:  l.UpdatedAt,
+	}
+}
+
+type dbEvent struct {
+	ID         string
+	SourceID   string
+	NodeID     string
+	Payload    json.RawMessage
+	ProducedAt time.Time
+	CreatedAt  time.Time
+}
+
+func (e *dbEvent) ToDomain() *workload.Event {
+	return &workload.Event{
+		ID:         e.ID,
+		SourceID:   e.SourceID,
+		NodeID:     e.NodeID,
+		Payload:    e.Payload,
+		ProducedAt: e.ProducedAt,
+		CreatedAt:  e.CreatedAt,
 	}
 }
