@@ -24,6 +24,8 @@ func (r *Repository) workloadPrimitiveSelect(ctx context.Context, query string, 
 		&s.RAM,
 		&s.Command,
 		&s.Env,
+		&s.ContainerPort,
+		&s.HostPort,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -59,6 +61,8 @@ func (r *Repository) ListWorkloads(ctx context.Context, status *string, resource
 			&s.RAM,
 			&s.Command,
 			&s.Env,
+			&s.ContainerPort,
+			&s.HostPort,
 			nil,
 		)
 		if err != nil {
@@ -100,6 +104,8 @@ func (r *Repository) CreateWorkload(ctx context.Context, domainWorkload workload
 		domainWorkload.Spec.RAM,
 		domainWorkload.Spec.Command,
 		domainWorkload.Spec.Env,
+		domainWorkload.Spec.ContainerPort,
+		domainWorkload.Spec.HostPort,
 	).Scan(
 		&s.ID,
 		&s.Image,
@@ -107,6 +113,8 @@ func (r *Repository) CreateWorkload(ctx context.Context, domainWorkload workload
 		&s.RAM,
 		&s.Command,
 		&s.Env,
+		&s.ContainerPort,
+		&s.HostPort,
 	)
 	if err != nil {
 		return nil, domain.ErrorWorkloadRepositoryInternalError.Wrap(err)

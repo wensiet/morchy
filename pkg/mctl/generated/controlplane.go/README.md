@@ -21,6 +21,7 @@ All URIs are relative to */*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
+*EdgesApi* | [**ApiV1EdgesGet**](docs/EdgesApi.md#apiv1edgesget) | **Get** /api/v1/edges | List edges
 *EventsApi* | [**ApiV1EventsPost**](docs/EventsApi.md#apiv1eventspost) | **Post** /api/v1/events | Push event
 *LeasesApi* | [**ApiV1WorkloadsWorkloadIdLeaseDelete**](docs/LeasesApi.md#apiv1workloadsworkloadidleasedelete) | **Delete** /api/v1/workloads/{workload_id}/lease | Release a lease
 *LeasesApi* | [**ApiV1WorkloadsWorkloadIdLeasePut**](docs/LeasesApi.md#apiv1workloadsworkloadidleaseput) | **Put** /api/v1/workloads/{workload_id}/lease | Extend a lease
@@ -31,12 +32,14 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
+ - [JsonformatterEdgeResponse](docs/JsonformatterEdgeResponse.md)
  - [JsonformatterEventCreateRequest](docs/JsonformatterEventCreateRequest.md)
  - [JsonformatterLeaseResponse](docs/JsonformatterLeaseResponse.md)
  - [JsonformatterWorkloadResponse](docs/JsonformatterWorkloadResponse.md)
  - [JsonformatterWorkloadSpecRequest](docs/JsonformatterWorkloadSpecRequest.md)
  - [RuntimeContainer](docs/RuntimeContainer.md)
  - [RuntimeEnvVar](docs/RuntimeEnvVar.md)
+ - [RuntimeNetConfig](docs/RuntimeNetConfig.md)
  - [RuntimeResourceLimits](docs/RuntimeResourceLimits.md)
 
 ## Documentation For Authorization

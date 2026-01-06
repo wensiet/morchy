@@ -28,7 +28,7 @@ func identifyWorkloadStatusFromEvents(events []*workload.Event, lease *workload.
 	})
 
 	if lease == nil {
-		if len(events) >= 0 && events[len(events)-1].ProducedAt.Add(time.Duration(domain.CStuckTimeout)*time.Second).Before(time.Now()) {
+		if len(events) > 0 && events[len(events)-1].ProducedAt.Add(time.Duration(domain.CStuckTimeout)*time.Second).Before(time.Now()) {
 			return workload.StuckWorkloadStatus
 		}
 		return workload.PendingWorkloadStatus

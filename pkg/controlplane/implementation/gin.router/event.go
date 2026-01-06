@@ -9,6 +9,7 @@ import (
 )
 
 // pushEvent godoc
+//
 //	@Summary		Push event
 //	@Description	Create a new event for a node
 //	@Tags			events

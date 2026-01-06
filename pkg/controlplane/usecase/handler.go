@@ -27,10 +27,15 @@ type EventLogic interface {
 	PushEvent(ctx context.Context, event workload.Event) error
 }
 
+type EdgeLogic interface {
+	ListEdges(context.Context) ([]*workload.Edge, error)
+}
+
 type Handler interface {
 	WorkloadLogic
 	LeaseLogic
 	EventLogic
+	EdgeLogic
 }
 
 type interactor struct {

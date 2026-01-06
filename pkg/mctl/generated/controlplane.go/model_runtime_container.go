@@ -12,5 +12,6 @@ type RuntimeContainer struct {
 	Image string `json:"image,omitempty"`
 	Labels map[string]string `json:"labels,omitempty"`
 	Name string `json:"name,omitempty"`
+	NetConfig *RuntimeNetConfig `json:"net_config,omitempty"`
 	Resources *RuntimeResourceLimits `json:"resources,omitempty"`
 }

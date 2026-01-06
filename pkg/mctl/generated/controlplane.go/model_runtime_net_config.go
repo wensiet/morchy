@@ -6,11 +6,8 @@
  */
 package swagger
 
-type JsonformatterWorkloadSpecRequest struct {
-	Command []string `json:"command,omitempty"`
+type RuntimeNetConfig struct {
 	ContainerPort int32 `json:"container_port,omitempty"`
-	Cpu int32 `json:"cpu,omitempty"`
-	Env map[string]string `json:"env,omitempty"`
-	Image string `json:"image,omitempty"`
-	Ram int32 `json:"ram,omitempty"`
+	HostPort int32 `json:"host_port,omitempty"`
+	Protocol string `json:"protocol,omitempty"`
 }

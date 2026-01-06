@@ -2,10 +2,12 @@ package runtime
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
 )
 
 type RuntimeClient interface {
@@ -30,6 +32,19 @@ func NewClient(dockerAPI *client.Client) *Client {
 }
 
 func (c *Client) CreateContainer(ctx context.Context, cnt Container) (string, error) {
+	var portBindings nat.PortMap
+	if cnt.NetConfig != nil {
+		containerPort := nat.Port(fmt.Sprintf("%d/tcp", cnt.NetConfig.ContainerPort))
+		portBindings = nat.PortMap{
+			containerPort: []nat.PortBinding{
+				{
+					HostIP:   "0.0.0.0",
+					HostPort: fmt.Sprintf("%d", cnt.NetConfig.HostPort),
+				},
+			},
+		}
+	}
+
 	resp, err := c.dockerAPI.ContainerCreate(
 		ctx,
 		&container.Config{
@@ -43,6 +58,7 @@ func (c *Client) CreateContainer(ctx context.Context, cnt Container) (string, er
 				NanoCPUs: int64(cnt.Resources.CPU) * 1000 * 1000, // 1 millicore = 1000 * 1000 * 1000 nanocores
 				Memory:   int64(cnt.Resources.RAM) * 1024 * 1024, // 1 MB = 1024 * 1024 bytes
 			},
+			PortBindings: portBindings,
 		},
 		nil,
 		nil,

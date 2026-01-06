@@ -23,6 +23,8 @@ type Repository interface {
 
 	SaveEvent(context.Context, Event) error
 	ListEvents(ctx context.Context, payloadFilters map[string]string, limit int) ([]*Event, error)
+
+	ListEdges(context.Context) ([]*Edge, error)
 }
 
 type RepositoryFactory interface {

@@ -4,6 +4,40 @@ info:
 servers:
 - url: /
 paths:
+  /api/v1/edges:
+    get:
+      tags:
+      - edges
+      summary: List edges
+      description: Retrieve a list of all edges
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/jsonformatter.EdgeResponse"
+                x-content-type: application/json
+        "400":
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+                x-content-type: application/json
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+                x-content-type: application/json
   /api/v1/events:
     post:
       tags:
@@ -302,6 +336,16 @@ paths:
                 x-content-type: application/json
 components:
   schemas:
+    jsonformatter.EdgeResponse:
+      type: object
+      properties:
+        proxy_path:
+          type: string
+        upstream_address:
+          type: string
+      example:
+        proxy_path: proxy_path
+        upstream_address: upstream_address
     jsonformatter.EventCreateRequest:
       type: object
     jsonformatter.LeaseResponse:
@@ -338,10 +382,14 @@ components:
       example:
         container:
           image: image
+          net_config:
+            container_port: 0
+            protocol: protocol
+            host_port: 6
           name: name
           resources:
-            cpu: 0
-            ram: 6
+            cpu: 1
+            ram: 5
           env:
           - name: name
             value: value
@@ -361,6 +409,8 @@ components:
           type: array
           items:
             type: string
+        container_port:
+          type: integer
         cpu:
           type: integer
         env:
@@ -390,14 +440,20 @@ components:
             type: string
         name:
           type: string
+        net_config:
+          $ref: "#/components/schemas/runtime.NetConfig"
         resources:
           $ref: "#/components/schemas/runtime.ResourceLimits"
       example:
         image: image
+        net_config:
+          container_port: 0
+          protocol: protocol
+          host_port: 6
         name: name
         resources:
-          cpu: 0
-          ram: 6
+          cpu: 1
+          ram: 5
         env:
         - name: name
           value: value
@@ -418,6 +474,19 @@ components:
       example:
         name: name
         value: value
+    runtime.NetConfig:
+      type: object
+      properties:
+        container_port:
+          type: integer
+        host_port:
+          type: integer
+        protocol:
+          type: string
+      example:
+        container_port: 0
+        protocol: protocol
+        host_port: 6
     runtime.ResourceLimits:
       type: object
       properties:
@@ -426,6 +495,6 @@ components:
         ram:
           type: integer
       example:
-        cpu: 0
-        ram: 6
+        cpu: 1
+        ram: 5
 x-original-swagger-version: "2.0"

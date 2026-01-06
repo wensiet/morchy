@@ -15,6 +15,50 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/v1/edges": {
+            "get": {
+                "description": "Retrieve a list of all edges",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "edges"
+                ],
+                "summary": "List edges",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/jsonformatter.EdgeResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/events": {
             "post": {
                 "description": "Create a new event for a node",
@@ -380,6 +424,17 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "jsonformatter.EdgeResponse": {
+            "type": "object",
+            "properties": {
+                "proxy_path": {
+                    "type": "string"
+                },
+                "upstream_address": {
+                    "type": "string"
+                }
+            }
+        },
         "jsonformatter.EventCreateRequest": {
             "type": "object"
         },
@@ -429,6 +484,9 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "container_port": {
+                    "type": "integer"
+                },
                 "cpu": {
                     "type": "integer"
                 },
@@ -473,6 +531,9 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "net_config": {
+                    "$ref": "#/definitions/runtime.NetConfig"
+                },
                 "resources": {
                     "$ref": "#/definitions/runtime.ResourceLimits"
                 }
@@ -485,6 +546,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "runtime.NetConfig": {
+            "type": "object",
+            "properties": {
+                "container_port": {
+                    "type": "integer"
+                },
+                "host_port": {
+                    "type": "integer"
+                },
+                "protocol": {
                     "type": "string"
                 }
             }

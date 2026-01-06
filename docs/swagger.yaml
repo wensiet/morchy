@@ -1,4 +1,11 @@
 definitions:
+  jsonformatter.EdgeResponse:
+    properties:
+      proxy_path:
+        type: string
+      upstream_address:
+        type: string
+    type: object
   jsonformatter.EventCreateRequest:
     type: object
   jsonformatter.LeaseResponse:
@@ -33,6 +40,8 @@ definitions:
         items:
           type: string
         type: array
+      container_port:
+        type: integer
       cpu:
         type: integer
       env:
@@ -62,6 +71,8 @@ definitions:
         type: object
       name:
         type: string
+      net_config:
+        $ref: '#/definitions/runtime.NetConfig'
       resources:
         $ref: '#/definitions/runtime.ResourceLimits'
     type: object
@@ -70,6 +81,15 @@ definitions:
       name:
         type: string
       value:
+        type: string
+    type: object
+  runtime.NetConfig:
+    properties:
+      container_port:
+        type: integer
+      host_port:
+        type: integer
+      protocol:
         type: string
     type: object
   runtime.ResourceLimits:
@@ -82,6 +102,35 @@ definitions:
 info:
   contact: {}
 paths:
+  /api/v1/edges:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of all edges
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/jsonformatter.EdgeResponse'
+            type: array
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List edges
+      tags:
+      - edges
   /api/v1/events:
     post:
       consumes:

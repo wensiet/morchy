@@ -18,10 +18,12 @@ type Workload struct {
 }
 
 type WorkloadSpec struct {
-	Name    string
-	Image   string
-	CPU     uint
-	RAM     uint
-	Command []string
-	Env     map[string]string
+	Name          string
+	Image         string
+	CPU           uint
+	RAM           uint
+	Command       []string
+	Env           map[string]string
+	ContainerPort *int
+	HostPort      *int
 }

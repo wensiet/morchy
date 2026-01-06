@@ -31,4 +31,5 @@ func (rh *RouterHandler) setWorkloadRoutes(apiV1 gin.RouterGroup) {
 	apiV1.PUT("/workloads/:workload_id/lease", rh.putLease)
 	apiV1.DELETE("/workloads/:workload_id/lease", rh.deleteLease)
 	apiV1.POST("/events", rh.pushEvent)
+	apiV1.GET("/edges", rh.listEdges)
 }

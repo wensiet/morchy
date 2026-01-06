@@ -14,7 +14,7 @@ func (q queries) SelectManyWorkloads(statusEq *string, limits *runtime.ResourceL
 	query := `
 	SELECT 
 		w.id, w.status, w.created_at,
-		s.id, s.image, s.cpu, s.ram, s.command, s.env,
+		s.id, s.image, s.cpu, s.ram, s.command, s.env, s.container_port, s.host_port,
 		l.workload_id
 	FROM workload w
 	JOIN spec s ON w.id = s.id
@@ -56,9 +56,9 @@ func (q queries) CreateWorkload() string {
 
 func (q queries) CreateWorkloadSpec() string {
 	return `
-		INSERT INTO spec (id, image, cpu, ram, command, env)
-		 VALUES ($1, $2, $3, $4, $5, $6)
-		 RETURNING id, image, cpu, ram, command, env
+		INSERT INTO spec (id, image, cpu, ram, command, env, container_port, host_port)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		 RETURNING id, image, cpu, ram, command, env, container_port, host_port
 	`
 }
 
@@ -103,7 +103,7 @@ func (q queries) SelectWorkloadByID() string {
 	return `
 		SELECT 
 			w.id, w.status, w.created_at,
-			s.id, s.image, s.cpu, s.ram, s.command, s.env
+			s.id, s.image, s.cpu, s.ram, s.command, s.env, s.container_port, s.host_port
 		FROM workload w
 		JOIN spec s ON w.id = s.id
 		WHERE w.id = $1
@@ -148,4 +148,8 @@ func (q queries) SelectManyEvents(payloadFitlers map[string]string, limit int) (
 	}
 
 	return query + baseOrdering + baseLimitting, args
+}
+
+func (q queries) SelectManyEdges() string {
+	return "SELECT l.workload_id, l.node_id, s.host_port FROM lease l join spec s ON s.id = l.workload_id where s.host_port IS NOT NULL"
 }
