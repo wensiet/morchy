@@ -45,6 +45,9 @@ func (c *Client) CreateOrExtendWorkloadLease(ctx context.Context, workloadID str
 		if statusCode == http.StatusNotFound {
 			return domain.ErrorWorkloadTerminatedOnControlPlane.Errorf("workload %s was not found on control-plane, treat it as terminated", workloadID)
 		}
+		if statusCode == http.StatusInternalServerError && strings.Contains(resp.String(), "lease_workload_id_fkey") {
+			return domain.ErrorWorkloadTerminatedOnControlPlane.Errorf("workload %s was not found on control-plane, treat it as terminated", workloadID)
+		}
 		if statusCode == http.StatusConflict && strings.Contains(resp.String(), domain.SOwnedByAnotherNode) {
 			return domain.ErrorWorkloadOwnedByAnotherNode.Errorf("workload %s is owned by another node", workloadID)
 		}

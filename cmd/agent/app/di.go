@@ -68,9 +68,18 @@ func runLoop(lc fx.Lifecycle, logger *zap.Logger, h usecase.Handler) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			go func() {
-				err := h.LoadCurrentState(ctx)
-				if err != nil {
-					panic(err)
+				backoffLimit := 10
+				for {
+					err := h.LoadCurrentState(ctx)
+					if err == nil {
+						break
+					} else {
+						backoffLimit -= 1
+						if backoffLimit <= 0 {
+							logger.Error("loading error backoff limit reached", zap.Error(err))
+							os.Exit(1)
+						}
+					}
 				}
 
 				if err := h.ApplyWorkloadJoin(ctx); err != nil {
