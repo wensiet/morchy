@@ -33,25 +33,31 @@ func NewClient(dockerAPI *client.Client) *Client {
 
 func (c *Client) CreateContainer(ctx context.Context, cnt Container) (string, error) {
 	var portBindings nat.PortMap
+	var exposedPorts nat.PortSet
+
 	if cnt.NetConfig != nil {
 		containerPort := nat.Port(fmt.Sprintf("%d/tcp", cnt.NetConfig.ContainerPort))
 		portBindings = nat.PortMap{
 			containerPort: []nat.PortBinding{
 				{
-					HostIP:   "0.0.0.0",
+					HostIP:   "",
 					HostPort: fmt.Sprintf("%d", cnt.NetConfig.HostPort),
 				},
 			},
+		}
+		exposedPorts = nat.PortSet{
+			containerPort: struct{}{},
 		}
 	}
 
 	resp, err := c.dockerAPI.ContainerCreate(
 		ctx,
 		&container.Config{
-			Image:  cnt.Image,
-			Cmd:    cnt.Command,
-			Env:    buildEnv(cnt.Env),
-			Labels: cnt.Labels,
+			Image:        cnt.Image,
+			Cmd:          cnt.Command,
+			Env:          buildEnv(cnt.Env),
+			Labels:       cnt.Labels,
+			ExposedPorts: exposedPorts,
 		},
 		&container.HostConfig{
 			Resources: container.Resources{
