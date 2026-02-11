@@ -1,0 +1,111 @@
+\chapter{Problem identification}
+\label{chap:met}
+
+\section{Glossary}
+
+\textbf{Recovery Time Objective (RTO)} – a formal metric defined within business continuity and disaster recovery planning that specifies the maximum acceptable duration a system, application, or service may remain unavailable after a disruption before significant business impact occurs. RTO directly influences architectural decisions regarding redundancy, failover strategies, and automation levels; a lower RTO typically necessitates more sophisticated and costly resilience mechanisms.
+
+\textbf{Requests Per Second (RPS)} – a performance indicator quantifying the number of incoming service requests a system processes in one second. RPS serves as a key benchmark for evaluating throughput, scalability, and load handling capacity, particularly in web-based and API driven applications. It is often used in conjunction with latency and error rate metrics to assess overall system efficacy under load.
+
+\textbf{Service-Level Agreement (SLA)} – a contractually binding commitment between a service provider and a client that defines the expected level of service, including measurable performance criteria such as uptime percentage, response time, RTO, and support responsiveness. Violations of SLA terms may incur financial penalties or service credits, making SLA adherence a critical driver of system design and operational practices in commercial and enterprise contexts.
+
+\section{Business impact}
+
+To illustrate the practical significance of workload orchestration in real-world systems, consider a business scenario involving a B2B authentication-as-a-service provider. Such a company operates an API service responsible for authenticating incoming client requests and determining access permissions. Upon initial deployment, the service handles a baseline load of 10 RPS. In a conventional deployment model, the API is hosted on a single virtual machine (VM). However, this approach introduces a critical single point of failure: if the underlying physical server hosting the VM fails, the entire service becomes unavailable, resulting in service downtime.
+
+In the example described, the failure goes unnoticed for approximately one minute. Engineering staff then manually migrate the service to another VM, resulting in a RTO of five minutes. During this outage window, the system fails to process 3,000 authentication requests (calculated as 10 RPS × 300 seconds). Such service interruptions inevitably lead to both reputational damage and direct financial losses, particularly in B2B contexts where SLA often stipulate strict uptime guarantees and penalties for non-compliance.
+
+In contrast, had the service been deployed within an orchestrated infrastructure such as one managed by Kubernetes or another container orchestration platform the failure scenario would unfold differently. Upon the VM’s failure, the orchestration system would automatically detect the loss of the service instance and reschedule it onto a healthy node within the cluster. Assuming a detection latency of one minute and a recovery time of 30 seconds, the total RTO would be reduced to 90 seconds. Consequently, only 900 requests (10 RPS × 90 seconds) would be lost a 70\% reduction in missed requests compared to the non-orchestrated scenario.
+
+This example underscores the critical role of orchestration in enhancing system resilience, minimizing recovery times, and maintaining service continuity. In contemporary distributed systems, where availability and reliability are paramount, orchestration is not merely a convenience but a foundational requirement for operational robustness and business sustainability.
+
+\section{Analysis of the existing solutions}
+
+\subsection{Kubernetes}
+
+Kubernetes - also known as K8s, is an open source system for automating deployment, scaling, and management of containerized applications \cite{k8s_docs}.
+
+K8s has become the de facto standard for container orchestration in modern cloud-native environments. Originally inspired by Google’s internal Borg system a large-scale cluster management platform developed over a decade of operational experience Kubernetes was open-sourced by Google in 2014 and subsequently donated to the Cloud Native Computing Foundation (CNCF) in 2015 \cite{burns2016borg}. This strategic move catalyzed widespread community adoption, ensured vendor neutrality, and established a sustainable governance model that continues to drive its evolution. As of early 2026, the official Kubernetes GitHub repository\footnote{\url{https://github.com/kubernetes/kubernetes}} boasts over 120,000 stars and contributions from more than 4,000 individual developers, reflecting its robust ecosystem and strong industry endorsement.
+
+Today, Kubernetes extends far beyond basic workload orchestration. It provides a comprehensive platform for automating deployment, scaling, service discovery, load balancing, secrets management, rolling updates, and self-healing effectively serving as a foundational layer for microservices architectures, serverless frameworks, and GitOps-based CI/CD pipelines \cite{burns2022kubernetes}. Its extensibility via Custom Resource Definitions (CRDs) and operators enables domain-specific automation, further cementing its role as an infrastructure control plane.
+
+However, despite its extensive capabilities and broad adoption, Kubernetes introduces notable operational and economic challenges that warrant careful consideration particularly for small-to-medium enterprises or resource-constrained environments. Two primary concerns are examined below.
+
+\subsubsection{Infrastructure Cost and Resource Overhead}
+Running a production-grade, highly available (HA) Kubernetes cluster entails significant infrastructure overhead. The control plane components such as the API server, scheduler, and controller manager must be replicated for fault tolerance, while the distributed key-value store etcd (which maintains cluster state) requires its own dedicated and co-located resources to ensure consistency and low-latency access.
+
+A minimally viable HA configuration typically demands:
+\begin{itemize}
+\item \textbf{Three} virtual machines (VMs) with at least \texttt{2 vCPUs} and \texttt{2 GB RAM} each for the Kubernetes control plane;
+\item \textbf{Three} additional VMs (often collocated with the control plane but ideally isolated for performance and security) with \texttt{2 vCPUs} and \texttt{4 GB RAM} each to host an HA \texttt{etcd} cluster;
+\item \textbf{At least one} worker node with \texttt{1 vCPU} and \texttt{512 MB RAM} to schedule application workloads.
+\end{itemize}
+
+This baseline setup consumes approximately 15 vCPUs and 22.5 GB RAM of provisioned resources, yet yields only 1 vCPU and 512 MB RAM of net usable capacity for actual business applications a resource efficiency ratio of less than 7\%. While lightweight Kubernetes distributions such as K3s \cite{k3s_docs} and K0s \cite{k0s_docs} aim to reduce this footprint by consolidating components and trimming non-essential features, they often sacrifice advanced capabilities (e.g. full RBAC granularity, audit logging, or native support for certain CSI drivers) or introduce trade-offs in security and observability. Consequently, organizations must weigh the benefits of Kubernetes feature richness against its operational footprint, especially when workloads are modest or latency-sensitive.
+
+\subsubsection{Operational Complexity and Expertise Requirements}
+Kubernetes is renowned for its steep learning curve and inherent architectural complexity. Its declarative model, while powerful, requires a deep understanding of concepts such as pods, services, ingress controllers, network policies, persistent volumes, and reconciliation loops. Misconfigurations particularly in networking, resource quotas, or security contexts are common and can lead to outages, performance degradation, or security vulnerabilities.
+
+Maintaining a production Kubernetes cluster reliably demands specialized expertise. Industry surveys indicate that organizations typically employ at least one full-time Site Reliability Engineer (SRE) or platform engineer per Kubernetes cluster in mission-critical environments. These professionals must not only manage day-to-day operations but also implement monitoring (e.g. via Prometheus and Grafana), logging (e.g. EFK or Loki stacks), backup/restore strategies, and compliance controls. The scarcity of qualified Kubernetes specialists significantly elevates operational expenditures, particularly in the form of personnel costs. In the Russian market, Site Reliability Engineers (SREs) with proficiency in Kubernetes command monthly salaries ranging from approximately 240,000 to 280,000 RUB (net), with the national average reported at 229,000 RUB in 2025 \cite{dreamjob_sre_2025}. These figures reflect a highly competitive labor market, especially in metropolitan hubs such as Moscow, where compensation approaches the upper end of this range. Internationally, the cost burden is even more pronounced: in North America and Western Europe, average annual SRE salaries exceed \$130,000–\$160,000 as of 2025 \cite{stackoverflow_dev_survey_2025}. Consequently, maintaining an in-house Kubernetes platform often necessitates substantial investment not only in infrastructure but also in specialized human capital a barrier that disproportionately affects smaller organizations and startups with constrained budgets.
+
+This complexity has spurred the growth of managed Kubernetes offerings (e.g. Amazon EKS, Google GKE, Azure AKS), which offload control plane management to cloud providers. While these services reduce operational burden, they introduce vendor lock-in risks and often shift rather than eliminate costs to the infrastructure and networking layers.
+
+\subsection{HashiCorp Nomad}
+
+TODO
+
+\section{Requirements clarification}
+
+Following a comprehensive competitive analysis and a thorough understanding of business imperatives, the next phase involves the systematic elicitation and formalization of requirements for the proposed orchestration prototype. To ensure alignment between stakeholder expectations and technical implementation, requirements are categorized the following way: business scenarios (representing business and operational perspectives), functional requirements (defining system capabilities), and non-functional requirements (specifying quality attributes and constraints).
+
+\subsection{Business Scenarios}
+
+The business scenarios were represented as user stories. No stakeholder interviews were conducted for this phase; instead, decisions were based on prior analysis. The following user stories were derived from that analysis and capture needs across business leadership, technical management, and operational engineering roles. These narratives were identified as central to the system’s value proposition.
+
+\begin{itemize}
+
+\item \textit{As a business owner, I want IT services to experience minimal or no downtime so that customer trust and revenue streams remain uninterrupted.}
+
+\item \textit{As a Chief Technology Officer (CTO), I want infrastructure failures not to result in significant operational or financial losses.}
+
+\item \textit{As a Site Reliability Engineer (SRE), I want the failure of a base infrastructure component such as a virtual machine to trigger automatic remediation without manual intervention.}
+
+\item \textit{As a SRE, I want application workloads to be automatically rescheduled onto healthy, available nodes upon VM failure.}
+
+\item \textit{As a SRE, I want a unified ingress point (API gateway) for all externally exposed applications. For the prototype scope, supported protocols shall be HTTP-based: RESTful APIs, gRPC over HTTP/2, and GraphQL.}
+
+\end{itemize}
+
+\subsection{Functional Requirements}
+
+Derived directly from the above user stories, the following functional requirements specify the system’s mandatory behaviors:
+
+\begin{enumerate}[label=\textbf{FR\arabic*.}, left=0pt]
+
+\item The system shall be distributed and fault-tolerant, ensuring continued operation despite the failure of individual compute nodes.
+
+\item The system shall automatically detect node (e.g., VM) failures and reschedule affected workloads onto healthy nodes within the cluster.
+
+\item The system shall provide a unified ingress layer (API gateway) capable of routing external traffic to internal services based on protocol and path, with initial support limited to HTTP-based protocols: REST, gRPC (via HTTP/2), and GraphQL.
+
+\end{enumerate}
+
+\subsection{Non-Functional Requirements}
+
+To ensure the system meets real-world operational standards, the following non-functional requirements critical for reliability, security, and maintainability were established:
+
+\begin{enumerate}[label=\textbf{NFR\arabic*.}, left=0pt]
+
+\item \textbf{Recovery Time}: Workload rescheduling following a node failure must complete within \textbf{90 seconds} (inclusive of failure detection and service restoration).
+
+\item \textbf{Control Plane Resilience}: The system shall remain operational and capable of managing workloads even during transient or partial outages of the orchestration control plane (e.g., through decentralized scheduling or edge-based failover mechanisms).
+
+\item \textbf{Scalability}: The architecture shall support horizontal scaling of both control and data planes to accommodate future growth in workload volume and cluster size without architectural refactoring.
+
+\item \textbf{Security}: All inter-component communication shall be encrypted in transit using Transport Layer Security (TLS) 1.3 or higher. Mutual TLS (mTLS) shall be enforced for service-to-service communication within the cluster to ensure authentication and data integrity.
+
+\end{enumerate}
+
+\section{Requirements Finalization}
+
+Taken together, these requirements reflect a deliberate balance between operational pragmatism, business continuity, and technical feasibility. They establish a clear design envelope for the prototype: a lightweight, self-healing orchestration layer that prioritizes rapid recovery, protocol-aware ingress, and secure communication while explicitly avoiding the resource overhead and administrative complexity associated with full-scale Kubernetes deployments. The 90-second RTO serves as a measurable benchmark for validation, and the emphasis on control plane resilience addresses a key gap in existing lightweight orchestration solutions. Ultimately, this requirements baseline not only encodes stakeholder expectations but also provides a testable foundation against which architectural alternatives and implementation outcomes can be rigorously evaluated.

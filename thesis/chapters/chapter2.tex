@@ -1,0 +1,25 @@
+\chapter{Literature Review}
+\label{chap:lr}
+\chaptermark{Second Chapter Heading}
+
+Several literature sources were employed to perform analysis of the problem. Google Scholar and Research Gate served to perform the research on the distributed compute management and pull-model approach. The keywords used to find the sources were "cloud orchestration", "distributed cloud computing", "pull-model". To fetch more practical insights we decided to use official Kubernetes, HashiCorp Nomad and Apache OpenServerless documentation.
+
+\section{Container orchestration systems}
+
+Modern orchestration platforms, such as Kubernetes and HashiCorp Nomad, have become standard tools for managing distributed workloads in cloud environments. Kubernetes provides a declarative configuration model and uses a centralized control plane to manage containerized workloads across multiple nodes \cite{k8s_docs}. However, it relies on hybrid (both push and pull models) control mechanism. To decide where to schedule workloads, there is a push-based mechanism, located on the control plane, which could server as another point of failure. But for configuration delivery it uses pull model, node agent watches for changes and applies it when there are some. Nomad offers a similar architecture but emphasizes simplicity and flexibility in scheduling non-containerized workloads \cite{nomad_docs}. Nevertheless agent or client in terms of Nomad acts like a reporter of a node current state whether a resource operator. In conclusion both rely primarily on a push-based control mechanism, where the control plane assigns tasks to worker nodes. While this approach ensures strong control and consistency, it introduces higher coupling, operational complexity, and reduced fault tolerance.
+
+Research by Sebrechts et al. \cite{A} highlights challenges in distributed application management, emphasizing the need for scalable and adaptive orchestration systems. It offers great alternative - distributing operational agents. Similarly, Pantazoglo et al. \cite{C} propose decentralized workload management approaches to improve energy efficiency and reduce coordination overhead in large-scale systems. These studies suggest that centralization, while powerful, can become a bottleneck for resilience and scalability.
+
+\section{Pull-based and decentralized approaches}
+
+The pull-based paradigm, originally explored in software engineering and version control systems, introduces an alternative model for coordination and synchronization. Godin et al. \cite{B} examined the pull-based software development model and demonstrated its advantages in reducing coordination conflicts and improving modularity. These principles can be adapted to workload orchestration, where worker nodes autonomously retrieve workloads and configurations, thus minimizing reliance on a central scheduler.
+
+Recent research on decentralized cloud computing supports this shift. Pantazoglo et al. \cite{C} and Godin et al. \cite{B} highlight that decentralized and eventually consistent systems can maintain reliability while reducing latency and operational risk. These approaches align with modern distributed architectures that prioritize resilience and fault isolation over strict central coordination.
+
+\section{Security and reliability concerns}
+
+Infrastructure reliability and security are critical for large-scale deployments. Google Cloud’s production systems rely on strong security models and automated workload verification to ensure service integrity \cite{google_security}. However, such designs also depend on highly centralized control planes, which can create single points of failure. Research on resilient cloud systems emphasizes the need for autonomous components that can recover independently \cite{G} and sustain partial system failures \cite{F, FSup}. Finally, compliance and governance are integral to reliable infrastructure, especially in enterprise and regulated environments. Emerging research also highlights the potential of decentralized and federated cloud management frameworks to enhance resilience and security while reducing reliance on single points of failure.
+
+\section{Summary}
+
+The reviewed literature provides valuable information on modern approaches to workload management, orchestration and security in cloud environments. Existing systems such as Kubernetes and Nomad demonstrate effective solutions but still rely heavily on centralized management models. Research shows that decentralized and pull-based mechanisms can increase scalability, resilience and autonomy. Overall, while much can be gained from the work already done, there is still considerable room for improvement - especially in developing more adaptive, fault-tolerant and secure orchestration architectures.
