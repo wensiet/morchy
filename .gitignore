@@ -35,3 +35,16 @@ cmd/local/
 
 bin/
 sandbox/
+
+*.toc
+*.run.xml
+*.log
+*.lot
+*.lof
+*.fls
+*.fdb_latexmk
+*.blg
+*.bcf
+*.bbl
+*.aux
+.DS_Store

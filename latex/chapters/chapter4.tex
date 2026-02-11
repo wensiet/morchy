@@ -148,3 +148,137 @@ Figure~\ref{fig:final-architecture} presents a comprehensive view of the finaliz
 
 \subsection{Technical Scenarios}
 
+This section presents the concrete implementation details of the system, illustrating how the pull-based orchestration model operates in practice through key technical scenarios. Each scenario demonstrates a core aspect of the system's functionality, including workload submission, agent discovery, lease management, failure recovery, and ingress routing.
+
+\subsubsection{Scenario 1: Workload Creation and Submission}
+
+The initial entry point for orchestrating a workload is through the command-line interface tool \texttt{mctl}. Operators define workload specifications in a declarative YAML format that encapsulates the container image, resource requirements, command invocation, environment variables, and optional port mappings. Figure~\ref{fig:workload-spec} presents an example workload specification for a long-running HTTP server.
+
+\begin{figure}[h]
+\centering
+\begin{lstlisting}[style=yaml]
+    image: "python:3.9"
+    command:
+      - "python"
+      - "-m"
+      - "http.server"
+      - "8000"
+    cpu: 200          # 200 millicores (0.2 CPU cores)
+    ram: 512          # 512 megabytes
+    env:
+      PYTHONUNBUFFERED: "1"
+    container_port: 8000
+\end{lstlisting}
+\caption{Example workload specification in YAML format for a Python HTTP server. The \texttt{cpu} field specifies resource requirements in millicores, while \texttt{ram} is expressed in megabytes.}
+\label{fig:workload-spec}
+\end{figure}
+
+
+The submission workflow begins when the operator executes \texttt{mctl apply workload -f workload.yaml}. The CLI tool parses the YAML specification and issues a POST request to the control plane's REST API endpoint \texttt{/api/v1/workloads}. Upon receiving the request, the control plane validates the specification, generates a unique identifier (UUIDv4) for the workload, and persists the workload record in PostgreSQL with an initial status of \texttt{new}. The system returns the workload identifier to the operator, enabling subsequent tracking and management operations.
+
+Figure~\ref{fig:seq-workload-creation} illustrates the complete workload creation sequence.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{figs/4-5-workload-create.png}
+\caption{Sequence diagram illustrating the workload creation and submission workflow. The operator submits a YAML specification via mctl, which is validated and persisted by the control plane, returning a unique workload identifier.}
+\label{fig:seq-workload-creation}
+\end{figure}
+\newpage
+
+\subsubsection{Scenario 2: Agent Discovery and Workload Acquisition}
+
+The pull-based model manifests most clearly in how agents discover and acquire workloads. Each agent runs a periodic reconciliation loop, orchestrated by a generic supervisor pattern that executes registered tasks at configurable intervals. By default, the supervisor triggers the workload acquisition logic every 10 seconds.
+
+During each iteration, the agent performs the following sequence:
+
+\begin{enumerate}[label=(\arabic*)]
+\item The agent queries the control plane's \texttt{GET /api/v1/workloads} endpoint, passing its available resource capacity as query parameters (e.g., \texttt{cpu=4000} and \texttt{ram=8192}). The control plane responds with a list of workloads whose resource requirements fit within the agent's capacity and which do not currently have active leases.
+\item The agent filters the response to exclude workloads it has already acquired, maintaining a local cache of owned workloads to prevent duplicate acquisition.
+\item If candidate workloads remain, the agent selects one (using a first-fit strategy) and attempts to acquire a lease by issuing a \newline
+\texttt{PUT /api/v1/workloads/\{id\}/lease?node\_id=\{node\_id\}}
+\newline request to the control plane.
+\item The control plane records the lease in the database, associating the workload identifier with the requesting node's identifier, along with a timestamp. The lease acquisition is atomic: if multiple agents simultaneously attempt to lease the same workload, the database's uniqueness constraint ensures only one succeeds.
+\end{enumerate}
+
+Once the lease is acquired, the agent transitions the workload locally to the \texttt{pending} status and initiates the container creation process using the Docker Engine API.
+
+Figure~\ref{fig:seq-workload-acquisition} depicts the workload acquisition sequence with lease management.
+
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{figs/4-6-workload-applying.png}
+\caption{Sequence diagram illustrating agent-driven workload acquisition. The agent polls for available workloads, acquires a lease, and creates the container via Docker.}
+\label{fig:seq-workload-acquisition}
+\end{figure}
+\newpage
+
+\subsubsection{Scenario 3: Container Lifecycle Management}
+
+Upon successfully leasing a workload, the agent invokes the container runtime to create and start the container according to the specification. The agent translates the abstract workload specification into Docker-specific configuration, setting CPU and memory limits using cgroups via Docker's \texttt{--cpus} and \texttt{--memory} flags, passing environment variables, and exposing the specified container port.
+
+The agent then enters a monitoring phase, during which it periodically checks the container's health status. If the container exits unexpectedly, the agent attempts to restart it, subject to a configurable retry policy. Throughout the container's lifetime, the agent renews the lease every 10 seconds by issuing subsequent \texttt{PUT} requests to the control plane, updating the lease's \texttt{updated\_at} timestamp. This heartbeat mechanism signals to the control plane that the workload remains under active management.
+
+\subsubsection{Scenario 4: Lease Expiration and Fault Tolerance}
+
+A critical aspect of the system's resilience is its handling of node failures. The control plane runs a background task every 30 seconds that identifies and expires stale leases. A lease is considered stale if its \texttt{updated\_at} timestamp predates a configured threshold (default: 30 seconds). When a node fails unexpectedly for example, due to a VM crash, network failure, or agent process termination it ceases to renew its leases. Consequently, the background task detects the stale leases and deletes them from the database, thereby releasing the associated workloads.
+
+Once a workload's lease expires, the workload becomes available for acquisition by other agents. The system tracks workload status transitions based on event history: if a workload remains in the \texttt{pending} state without a valid lease for more than 90 seconds, it is automatically marked as \texttt{stuck}, indicating a persistent failure to start. Conversely, if a workload in the \texttt{active} state loses its lease, it becomes eligible for rescheduling onto a healthy node.
+
+This design embodies the pull model's self-healing property: failures are detected indirectly through the absence of lease renewals, and recovery occurs automatically as other agents discover and acquire the orphaned workloads. No explicit push-based notification or failure detection mechanism is required from the control plane.
+
+Figure~\ref{fig:seq-fault-tolerance} illustrates the fault tolerance mechanism, including node failure detection and workload rescheduling.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{figs/4-7-workload-recovery.png}
+\caption{Sequence diagram illustrating fault tolerance through lease expiration. When Agent A fails, the background task expires the stale lease after 30 seconds, enabling Agent B to acquire and reschedule the workload.}
+\label{fig:seq-fault-tolerance}
+\end{figure}
+
+\subsubsection{Scenario 5: Event Propagation and Status Tracking}
+
+The system maintains an auditable history of state transitions through an event log. Agents generate events for significant lifecycle events: container creation, container exit, health check success, and health check failure. Each event encapsulates the workload identifier, node identifier, action type, and outcome status. Agents POST these events to the \texttt{/api/v1/events} endpoint, where the control plane persists them in the database.
+
+The control plane uses event history to infer workload status. For example, a sequence of successful health check events indicates a healthy \texttt{active} workload, while repeated exit events with non-zero exit codes suggest a \texttt{failed} state. This event-driven status computation ensures that the system's view of workload health derives from ground-truth observations from the data plane, rather than assumptions made by the control plane.
+
+Figure~\ref{fig:seq-event-propagation} shows the event propagation flow from agent to control plane, including status inference.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{figs/4-8-workload-events.png}
+\caption{Sequence diagram illustrating event propagation and status inference. Agents emit lifecycle events which are persisted in PostgreSQL; the control plane infers workload status from event history patterns.}
+\label{fig:seq-event-propagation}
+\end{figure}
+
+\subsubsection{Scenario 6: Ingress Routing via Edge Component}
+
+Workloads that expose HTTP endpoints require a unified access point for external clients. The Edge component addresses this need by periodically querying the control plane's \texttt{GET /api/v1/edges} endpoint to retrieve the current mapping of route prefixes to workload backend addresses. Each edge entry specifies a path prefix (e.g., \texttt{/my-service}) and an upstream address (e.g., \texttt{node-1:8000}).
+
+The Edge component implements a reverse proxy that parses incoming HTTP requests, extracts the path prefix, and forwards the request to the corresponding backend using HTTP. This design enables operators to expose services through a single canonical endpoint while the actual workload instances may be scheduled on any node in the cluster. As workloads are rescheduled following failures, the Edge automatically updates its routing configuration upon the next periodic fetch, ensuring that traffic continues to flow to healthy instances without manual reconfiguration.
+
+\subsubsection{Implementation Architecture Summary}
+
+The implementation is organized into four main components, each adhering to a layered architecture pattern that separates concerns across domain, use case, infrastructure, and implementation layers:
+
+\begin{itemize}
+\item \textbf{Control Plane} (\texttt{pkg/controlplane/}): Stateless REST API server that exposes endpoints for workload management, lease operations, and event ingestion. Uses Uber FX for dependency injection and runs background tasks for lease expiration.
+\item \textbf{Agent} (\texttt{pkg/agent/}): Pull-based worker that periodically polls the control plane, manages container lifecycle via Docker, renews leases, and reports events. Employs a supervisor pattern for periodic task management.
+\item \textbf{Edge} (\texttt{pkg/edge/}): Network proxy that dynamically configures routing rules based on edge configurations fetched from the control plane.
+\item \textbf{mctl} (\texttt{pkg/mctl/}): Command-line interface for workload submission, querying, and management.
+\end{itemize}
+
+All components communicate exclusively via REST over HTTPS, with the control plane maintaining PostgreSQL as the authoritative data store. The architecture is horizontally scalable: multiple control plane instances can run behind a load balancer, and agents are stateless and homogeneous, enabling elastic scaling of the data plane.
+
+Figure~\ref{fig:seq-end-to-end} presents a comprehensive end-to-end sequence demonstrating the complete lifecycle from workload creation through node failure to automatic recovery.
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth,keepaspectratio]{figs/4-9-workload-lifecycle.png}
+\caption{Comprehensive end-to-end sequence demonstrating the complete pull-based orchestration lifecycle: workload creation, agent acquisition, normal operation with lease renewal, node failure detection through lease expiration, and automatic recovery by another agent. The annotated RTO box shows how the 90-second Recovery Time Objective is achieved.}
+\label{fig:seq-end-to-end}
+\end{figure}
+
+This implementation demonstrates that a pull-based orchestration system can be constructed with minimal operational complexity while retaining the core benefits of self-healing, fault tolerance, and decentralized coordination. The subsequent evaluation chapter presents empirical measurements of the system's performance, including recovery time objective achievement and resource efficiency.
+

@@ -95,6 +95,19 @@
 % \titleformat{\paragraph}[runin]{\itshape}{\alph{paragraph})}{1em}{}[$:$\quad]
 % \titlespacing{\paragraph}{2em}{1em}{1em}
 
+\usepackage{xcolor}
+\usepackage{listings}
+
+\lstdefinestyle{yaml}{
+     basicstyle=\color{blue}\footnotesize,
+     rulecolor=\color{black},
+     string=[s]{'}{'},
+     stringstyle=\color{blue},
+     comment=[l]{:},
+     commentstyle=\color{black},
+     morecomment=[l]{-}
+ }
+
 \usepackage{placeins} % for \FloatBarrier
 
 \pagestyle{fancyplain}
