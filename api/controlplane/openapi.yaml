@@ -1,0 +1,351 @@
+---
+openapi: 3.0.1
+info:
+  title: Morchy control-plane
+  version: 3.0.1
+servers:
+  - url: "http://localhost:8000"
+paths:
+  "/api/agent/v1/events":
+    post:
+      tags:
+      - events
+      summary: Push event
+      description: Create a new event for a node
+      parameters:
+      - name: node_id
+        in: query
+        description: Node ID
+        required: true
+        schema: 
+          type: string
+      requestBody:
+        description: Event payload
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/jsonformatter.EventCreateRequest"
+        required: true
+      responses:
+        '201':
+          description: Created
+          content: {}
+      x-codegen-request-body-name: body
+  "/api/agent/v1/workloads":
+    get:
+      tags:
+      - workloads
+      summary: List workloads
+      description: Retrieve a list of workloads filtered by status, CPU, and RAM
+      parameters:
+      - name: status
+        in: query
+        description: Filter by workload status
+        schema:
+          type: string
+      - name: cpu
+        in: query
+        description: Filter by CPU (millicores)
+        schema:
+          type: integer
+      - name: ram
+        in: query
+        description: Filter by RAM (MB)
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/jsonformatter.WorkloadResponse"
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+  "/api/agent/v1/workloads/{workload_id}/lease":
+    put:
+      tags:
+      - leases
+      summary: Extend a lease
+      description: Extend a lease for a specific workload on a given node
+      parameters:
+      - name: workload_id
+        in: path
+        description: Workload ID
+        required: true
+        schema:
+          minLength: 1
+          type: string
+      - name: node_id
+        in: query
+        description: Node ID
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/jsonformatter.LeaseResponse"
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+    delete:
+      tags:
+      - leases
+      summary: Release a lease
+      description: Release/delete a lease for a specific workload on a given node
+      parameters:
+      - name: workload_id
+        in: path
+        description: Workload ID
+        required: true
+        schema:
+          minLength: 1
+          type: string
+      - name: node_id
+        in: query
+        description: Node ID
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: No Content
+          content: {}
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+  "/api/v1/workloads":
+    post:
+      tags:
+      - workloads
+      summary: Create workload
+      description: Create a new workload from provided spec
+      requestBody:
+        description: Workload specification
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/jsonformatter.WorkloadSpecRequest"
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/jsonformatter.WorkloadResponse"
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+      x-codegen-request-body-name: workloadSpec
+  "/api/v1/workloads/{workload_id}":
+    get:
+      tags:
+      - workloads
+      summary: Get workload
+      description: Retrieve a single workload by ID
+      parameters:
+      - name: workload_id
+        in: path
+        description: Workload ID
+        required: true
+        schema:
+          minLength: 1
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/jsonformatter.WorkloadResponse"
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+    delete:
+      tags:
+      - workloads
+      summary: Delete workload
+      description: Delete a workload and all related models (lease, spec)
+      parameters:
+      - name: workload_id
+        in: path
+        description: Workload ID
+        required: true
+        schema:
+          minLength: 1
+          type: string
+      responses:
+        '204':
+          description: No Content
+          content: {}
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+components:
+  schemas:
+    jsonformatter.EventCreateRequest:
+      type: object
+    jsonformatter.LeaseResponse:
+      type: object
+      properties:
+        created_at:
+          type: string
+          example: '2025-11-03T13:45:00+03'
+        node_id:
+          type: string
+          example: some-node-id
+        updated_at:
+          type: string
+          example: '2025-11-03T13:45:00+03'
+        workload_id:
+          type: string
+          example: some-workload-id
+    jsonformatter.WorkloadResponse:
+      type: object
+      properties:
+        container:
+          "$ref": "#/components/schemas/runtime.Container"
+        id:
+          type: string
+          example: some-uuid
+        status:
+          type: string
+          example: new
+    jsonformatter.WorkloadSpecRequest:
+      type: object
+      properties:
+        command:
+          type: array
+          items:
+            type: string
+        cpu:
+          type: integer
+        env:
+          type: object
+          additionalProperties:
+            type: string
+        image:
+          type: string
+        ram:
+          type: integer
+    runtime.Container:
+      type: object
+      properties:
+        command:
+          type: array
+          items:
+            type: string
+        env:
+          type: array
+          items:
+            "$ref": "#/components/schemas/runtime.EnvVar"
+        image:
+          type: string
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+        name:
+          type: string
+        resources:
+          "$ref": "#/components/schemas/runtime.ResourceLimits"
+    runtime.EnvVar:
+      type: object
+      properties:
+        name:
+          type: string
+        value:
+          type: string
+    runtime.ResourceLimits:
+      type: object
+      properties:
+        cpu:
+          type: integer
+        ram:
+          type: integer
