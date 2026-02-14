@@ -18,7 +18,7 @@ func (i *interactor) GetLeaseByNodeAndWorkloadID(ctx context.Context, nodeId, wo
 		zap.String(domain.SWorkloadID, workloadId),
 	)
 
-	lease, err := i.wokrloadRepo.GetLease(ctx, nodeId, workloadId)
+	lease, err := i.workloadRepo.GetLease(ctx, nodeId, workloadId)
 	if err != nil {
 		if oopsErr, ok := oops.AsOops(err); ok && oopsErr.Code() == string(domain.NotFound) {
 			return nil, err
@@ -37,7 +37,17 @@ func (i *interactor) CreateOrExtendLease(ctx context.Context, nodeId, workloadId
 	)
 
 	tx, err := i.dbPool.Begin(ctx)
-	defer tx.Rollback(ctx)
+	if err != nil {
+		logger.Error("failed to start transaction", zap.Error(err))
+		return nil, domain.ErrorWorkloadRepositoryInternalError.Wrap(err)
+	}
+
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil && err != context.Canceled {
+			logger.Error("failed to rollback transaction", zap.Error(err))
+		}
+	}()
+
 	if err != nil {
 		logger.Error("failed to start transaction", zap.Error(err))
 		return nil, domain.ErrorWorkloadRepositoryInternalError.Wrap(err)
@@ -81,7 +91,7 @@ func (i *interactor) ExpireLeases(ctx context.Context) error {
 		zap.String(domain.SDomain, domain.SWorkload),
 	)
 
-	err := i.wokrloadRepo.DeleteExpiredLeases(ctx, domain.CLeaseLifetime)
+	err := i.workloadRepo.DeleteExpiredLeases(ctx, i.leaseLifetime)
 	if err != nil {
 		logger.Error("failed to delete expired leases", zap.Error(err))
 		return err
@@ -96,7 +106,7 @@ func (i *interactor) DeleteLease(ctx context.Context, nodeId, workloadId string)
 		zap.String(domain.SWorkloadID, workloadId),
 	)
 
-	if err := i.wokrloadRepo.DeleteLease(ctx, nodeId, workloadId); err != nil {
+	if err := i.workloadRepo.DeleteLease(ctx, nodeId, workloadId); err != nil {
 		logger.Error("failed to delete lease", zap.Error(err))
 		return err
 	}

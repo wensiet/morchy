@@ -13,7 +13,7 @@ func (i *interactor) ListEdges(ctx context.Context) ([]*workload.Edge, error) {
 		zap.String(domain.SDomain, domain.SWorkload),
 	)
 
-	edges, err := i.wokrloadRepo.ListEdges(ctx)
+	edges, err := i.workloadRepo.ListEdges(ctx)
 	if err != nil {
 		logger.Error("failed to list edges", zap.Error(err))
 		return nil, err

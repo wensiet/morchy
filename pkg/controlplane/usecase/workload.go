@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func identifyWorkloadStatusFromEvents(events []*workload.Event, lease *workload.Lease) workload.WorkloadStatus {
+func identifyWorkloadStatusFromEvents(events []*workload.Event, lease *workload.Lease, stuckTimeout int) workload.WorkloadStatus {
 	/*
 		Gather status strategy:
 		- PENDING if workload is created, has no leases
@@ -28,7 +28,7 @@ func identifyWorkloadStatusFromEvents(events []*workload.Event, lease *workload.
 	})
 
 	if lease == nil {
-		if len(events) > 0 && events[len(events)-1].ProducedAt.Add(time.Duration(domain.CStuckTimeout)*time.Second).Before(time.Now()) {
+		if len(events) > 0 && events[len(events)-1].ProducedAt.Add(time.Duration(i.stuckTimeout)*time.Second).Before(time.Now()) {
 			return workload.StuckWorkloadStatus
 		}
 		return workload.PendingWorkloadStatus
@@ -62,7 +62,7 @@ func (i *interactor) CreateWorkload(ctx context.Context, workloadSpec workload.W
 		zap.String(domain.SContainerName, workloadSpec.Name),
 	)
 
-	workload, err := i.wokrloadRepo.CreateWorkload(ctx, workload.Workload{
+	workload, err := i.workloadRepo.CreateWorkload(ctx, workload.Workload{
 		ID:     uuid.NewString(),
 		Status: workload.NewWorkloadStatus,
 		Spec:   workloadSpec,
@@ -81,11 +81,16 @@ func (i *interactor) GetWorkload(ctx context.Context, workloadID string) (*workl
 	)
 
 	tx, err := i.dbPool.Begin(ctx)
-	defer tx.Rollback(ctx)
 	if err != nil {
 		logger.Error("failed to start transaction", zap.Error(err))
 		return nil, domain.ErrorWorkloadRepositoryInternalError.Wrap(err)
 	}
+
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil && err != context.Canceled {
+			logger.Error("failed to rollback transaction", zap.Error(err))
+		}
+	}()
 
 	repo := i.repositoryFactory.New(tx)
 
@@ -103,7 +108,7 @@ func (i *interactor) GetWorkload(ctx context.Context, workloadID string) (*workl
 			domain.SAction:     domain.SHealthcheck,
 			domain.SWorkloadID: workloadID,
 		},
-		domain.CEventListLimit,
+		i.eventListLimit,
 	)
 	if err != nil {
 		logger.Error("failed to get workload events", zap.Error(err))
@@ -118,7 +123,7 @@ func (i *interactor) GetWorkload(ctx context.Context, workloadID string) (*workl
 		}
 	}
 
-	workload.Status = identifyWorkloadStatusFromEvents(events, lease)
+	workload.Status = identifyWorkloadStatusFromEvents(events, lease, i.stuckTimeout)
 
 	return workload, nil
 }
@@ -128,7 +133,7 @@ func (i *interactor) ListWorkloads(ctx context.Context, statusEq *string, resour
 		zap.String(domain.SDomain, domain.SWorkload),
 	)
 
-	workloads, err := i.wokrloadRepo.ListWorkloads(ctx, statusEq, resourceLte)
+	workloads, err := i.workloadRepo.ListWorkloads(ctx, statusEq, resourceLte)
 	if err != nil {
 		logger.Error("failed to list workloads", zap.Error(err))
 		return nil, err
@@ -142,7 +147,7 @@ func (i *interactor) DeleteWorkload(ctx context.Context, workloadID string) erro
 		zap.String(domain.SWorkloadID, workloadID),
 	)
 
-	if err := i.wokrloadRepo.DeleteWorkload(ctx, workloadID); err != nil {
+	if err := i.workloadRepo.DeleteWorkload(ctx, workloadID); err != nil {
 		if oopsErr, ok := oops.AsOops(err); ok && oopsErr.Code() == string(domain.NotFound) {
 			return err
 		}

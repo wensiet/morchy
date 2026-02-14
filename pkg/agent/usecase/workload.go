@@ -20,7 +20,7 @@ func (i *interactor) getRunnableWorkload(ctx context.Context) (*apitypes.Workloa
 	var chosenWorkload *apitypes.WorkloadResponse
 	for _, candidate := range availableWorkloads {
 		if storedWL, _ := i.workloadRepo.GetWorkload(candidate.ID); storedWL != nil {
-			i.logger.Warn("skipped workload", zap.String(domain.SReason, domain.SWorkloadAlreadyInStoreage))
+			i.logger.Warn("skipped workload", zap.String(domain.SReason, domain.SWorkloadAlreadyInStorage))
 			continue
 		}
 		chosenWorkload = candidate
@@ -62,7 +62,7 @@ func (i *interactor) CreateWorkload(ctx context.Context, chosenWorkload apitypes
 
 	err = i.startWorklodLifecycle(ctx, *domainWorkload)
 	if err != nil {
-		domain.ErrorBaseWorkloadInternal.With(domain.SWorkload, chosenWorkload.ID).
+		return domain.ErrorBaseWorkloadInternal.With(domain.SWorkload, chosenWorkload.ID).
 			Wrapf(err, "error on starting wokrlod lifecycle")
 	}
 
@@ -70,13 +70,16 @@ func (i *interactor) CreateWorkload(ctx context.Context, chosenWorkload apitypes
 }
 
 func (i *interactor) terminateWorkload(ctx context.Context, w workload.Workload) error {
-	_ = i.runtimeClient.StopContainer(ctx, w.Container.Name)
-	err := i.runtimeClient.RemoveContainer(ctx, w.Container.Name) // TODO: push event or panic
+	err := i.runtimeClient.StopContainer(ctx, w.Container.Name)
+	if err != nil {
+		i.logger.Warn("failed to stop container during termination", zap.String(domain.SWorkloadID, w.ID), zap.Error(err))
+	}
+	err = i.runtimeClient.RemoveContainer(ctx, w.Container.Name)
 	if err != nil {
 		i.logger.Error("failed to terminate workload", zap.String(domain.SWorkloadID, w.ID), zap.Error(err))
-	} else {
-		i.logger.Info("terminated workload", zap.String(domain.SWorkloadID, w.ID))
+		return err
 	}
+	i.logger.Info("terminated workload", zap.String(domain.SWorkloadID, w.ID))
 	i.workloadRepo.RemoveWorkload(w.ID)
 	return nil
 }

@@ -1,9 +1,9 @@
 package domain
 
 const (
-	CLeaseLifetime = 30
+	DefaultLeaseLifetime = 30
 
-	CEventListLimit = 5
+	DefaultEventListLimit = 5
 
-	CStuckTimeout = CLeaseLifetime * 3
+	DefaultStuckTimeout = DefaultLeaseLifetime * 3
 )

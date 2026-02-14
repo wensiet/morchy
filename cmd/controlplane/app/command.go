@@ -62,6 +62,9 @@ func NewControlPlaneCommand() *cobra.Command {
 
 	cmd.Flags().IntVar(&cfg.Port, "port", 8080, "HTTP server port")
 	cmd.Flags().StringVar(&cfg.DBConnString, "db", os.Getenv("DATABASE_URL"), "Postgres connection string")
+	cmd.Flags().IntVar(&cfg.LeaseLifetimeSec, "lease-lifetime", 30, "Lease lifetime in seconds before expiration")
+	cmd.Flags().IntVar(&cfg.EventListLimit, "event-list-limit", 5, "Maximum number of events to return per workload")
+	cmd.Flags().IntVar(&cfg.StuckTimeoutSec, "stuck-timeout", 90, "Timeout in seconds before marking a workload as stuck")
 
 	return cmd
 }

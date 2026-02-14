@@ -41,8 +41,11 @@ type Handler interface {
 type interactor struct {
 	logger            *zap.Logger
 	dbPool            dbutils.DB
-	wokrloadRepo      workload.Repository
+	workloadRepo      workload.Repository
 	repositoryFactory workload.RepositoryFactory
+	leaseLifetime     int
+	eventListLimit    int
+	stuckTimeout      int
 }
 
 func NewHandler(
@@ -50,11 +53,17 @@ func NewHandler(
 	workloadRepo workload.Repository,
 	workloadRepoFactory workload.RepositoryFactory,
 	dbPool dbutils.DB,
+	leaseLifetime int,
+	eventListLimit int,
+	stuckTimeout int,
 ) Handler {
 	return &interactor{
 		logger:            logger,
-		wokrloadRepo:      workloadRepo,
+		workloadRepo:      workloadRepo,
 		repositoryFactory: workloadRepoFactory,
 		dbPool:            dbPool,
+		leaseLifetime:     leaseLifetime,
+		eventListLimit:    eventListLimit,
+		stuckTimeout:      stuckTimeout,
 	}
 }

@@ -28,7 +28,7 @@ func (i *interactor) PushEvent(ctx context.Context, event workload.Event) error 
 		zap.String(domain.SEventSourceID, event.SourceID),
 		zap.String(domain.SNodeID, event.NodeID),
 	)
-	err := i.wokrloadRepo.SaveEvent(ctx, event)
+	err := i.workloadRepo.SaveEvent(ctx, event)
 	if err != nil {
 		logger.Error("failed to save event", zap.Error(err))
 		return err

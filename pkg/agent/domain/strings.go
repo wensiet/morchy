@@ -17,7 +17,7 @@ const (
 	SInsufficientResources     = "insufficient_resources"
 	SHealthcheckFailed         = "healthcheck_failed"
 	SNoWorkloadsToSchedule     = "no_workloads_to_schedule"
-	SWorkloadAlreadyInStoreage = "workload_already_in_storage"
+	SWorkloadAlreadyInStorage = "workload_already_in_storage"
 
 	SOwnedByAnotherNode = "owned_by_other_node"
 

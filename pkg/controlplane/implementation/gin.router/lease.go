@@ -4,8 +4,16 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/wernsiet/morchy/pkg/controlplane/domain"
 	"github.com/wernsiet/morchy/pkg/controlplane/implementation/jsonformatter"
 )
+
+func validateNodeID(nodeID string) error {
+	if nodeID == "" {
+		return domain.ErrorRequestParamsValidation.Wrapf(nil, "node_id cannot be empty")
+	}
+	return nil
+}
 
 // putLease godoc
 //
@@ -21,9 +29,17 @@ import (
 //	@Failure		500			{object}	map[string]string	"Internal server error"
 //	@Router			/api/v1/workloads/{workload_id}/lease [put]
 func (rh *RouterHandler) putLease(c *gin.Context) {
-	wokrloadID := c.Param("workload_id")
+	workloadID := c.Param("workload_id")
 	nodeID := c.Query("node_id")
-	lease, err := rh.ucHandler.CreateOrExtendLease(c, nodeID, wokrloadID)
+	if err := validateWorkloadID(workloadID); err != nil {
+		handleError(c, err)
+		return
+	}
+	if err := validateNodeID(nodeID); err != nil {
+		handleError(c, err)
+		return
+	}
+	lease, err := rh.ucHandler.CreateOrExtendLease(c, nodeID, workloadID)
 	if err != nil {
 		handleError(c, err)
 		return
@@ -47,6 +63,14 @@ func (rh *RouterHandler) putLease(c *gin.Context) {
 func (rh *RouterHandler) deleteLease(c *gin.Context) {
 	workloadID := c.Param("workload_id")
 	nodeID := c.Query("node_id")
+	if err := validateWorkloadID(workloadID); err != nil {
+		handleError(c, err)
+		return
+	}
+	if err := validateNodeID(nodeID); err != nil {
+		handleError(c, err)
+		return
+	}
 	if err := rh.ucHandler.DeleteLease(c, nodeID, workloadID); err != nil {
 		handleError(c, err)
 		return

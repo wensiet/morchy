@@ -4,9 +4,21 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/wernsiet/morchy/pkg/controlplane/domain"
 	"github.com/wernsiet/morchy/pkg/controlplane/implementation/jsonformatter"
 	"github.com/wernsiet/morchy/pkg/runtime"
 )
+
+func validateWorkloadID(workloadID string) error {
+	if workloadID == "" {
+		return domain.ErrorRequestParamsValidation.Wrapf(nil, "workload_id cannot be empty")
+	}
+	if _, err := uuid.Parse(workloadID); err != nil {
+		return domain.ErrorRequestParamsValidation.Wrapf(err, "invalid workload_id format")
+	}
+	return nil
+}
 
 // listWorkloads godoc
 //
@@ -67,6 +79,10 @@ func (rh *RouterHandler) listWorkloads(c *gin.Context) {
 //	@Router			/api/v1/workloads/{workload_id} [get]
 func (rh *RouterHandler) getWorkload(c *gin.Context) {
 	workloadID := c.Param("workload_id")
+	if err := validateWorkloadID(workloadID); err != nil {
+		handleError(c, err)
+		return
+	}
 
 	workload, err := rh.ucHandler.GetWorkload(c, workloadID)
 	if err != nil {
@@ -123,6 +139,10 @@ func (rh *RouterHandler) createWorkload(c *gin.Context) {
 //	@Router			/api/v1/workloads/{workload_id} [delete]
 func (rh *RouterHandler) deleteWorkload(c *gin.Context) {
 	workloadID := c.Param("workload_id")
+	if err := validateWorkloadID(workloadID); err != nil {
+		handleError(c, err)
+		return
+	}
 
 	if err := rh.ucHandler.DeleteWorkload(c, workloadID); err != nil {
 		handleError(c, err)
