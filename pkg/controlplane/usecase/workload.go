@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func identifyWorkloadStatusFromEvents(events []*workload.Event, lease *workload.Lease, stuckTimeout int) workload.WorkloadStatus {
+func (i *interactor) identifyWorkloadStatusFromEvents(events []*workload.Event, lease *workload.Lease, stuckTimeout int) workload.WorkloadStatus {
 	/*
 		Gather status strategy:
 		- PENDING if workload is created, has no leases
@@ -123,7 +123,7 @@ func (i *interactor) GetWorkload(ctx context.Context, workloadID string) (*workl
 		}
 	}
 
-	workload.Status = identifyWorkloadStatusFromEvents(events, lease, i.stuckTimeout)
+	workload.Status = i.identifyWorkloadStatusFromEvents(events, lease, i.stuckTimeout)
 
 	return workload, nil
 }
