@@ -44,7 +44,7 @@ func (i *interactor) CreateOrExtendLease(ctx context.Context, nodeId, workloadId
 
 	defer func() {
 		if err := tx.Rollback(ctx); err != nil && err != context.Canceled {
-			logger.Error("failed to rollback transaction", zap.Error(err))
+			logger.Debug("failed to rollback transaction", zap.Error(err))
 		}
 	}()
 

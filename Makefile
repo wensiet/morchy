@@ -15,3 +15,23 @@ build:
 	go build -o bin/controlplane cmd/controlplane/main.go
 	go build -o bin/agent cmd/agent/main.go
 	go build -o bin/mctl cmd/mctl/main.go
+
+test:
+	go test -v -race -coverprofile=coverage.out ./...
+
+test-coverage: test
+	go tool cover -html=coverage.out -o coverage.html
+
+test-coverage-clean:
+	go test -v -race -coverprofile=coverage.out ./pkg/...
+	go tool cover -func=coverage.out | grep -v mocks | grep -v testutil
+	go tool cover -html=coverage.out -o coverage.html
+
+test-coverage-report:
+	go tool cover -func=coverage.out | grep -v mocks | grep -v testutil
+
+test-short:
+	go test -short -v ./...
+
+mocks:
+	mockery --config .mockery.yaml

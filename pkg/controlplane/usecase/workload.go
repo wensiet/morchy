@@ -88,7 +88,7 @@ func (i *interactor) GetWorkload(ctx context.Context, workloadID string) (*workl
 
 	defer func() {
 		if err := tx.Rollback(ctx); err != nil && err != context.Canceled {
-			logger.Error("failed to rollback transaction", zap.Error(err))
+			logger.Debug("failed to rollback transaction", zap.Error(err))
 		}
 	}()
 
