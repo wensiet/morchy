@@ -48,8 +48,17 @@ func NewMCTLCommand() *cobra.Command {
 		newCreateWorkloadCommand(handler),
 	)
 
+	deleteCmd := &cobra.Command{
+		Use:   "delete",
+		Short: "Delete resource",
+	}
+	deleteCmd.AddCommand(
+		newDeleteWorkloadCommand(handler),
+	)
+
 	cmd.AddCommand(getCmd)
 	cmd.AddCommand(applyCmd)
+	cmd.AddCommand(deleteCmd)
 
 	return cmd
 }
@@ -149,4 +158,17 @@ func newCreateWorkloadCommand(handler usecase.Handler) *cobra.Command {
 
 	return cmd
 
+}
+
+func newDeleteWorkloadCommand(handler usecase.Handler) *cobra.Command {
+	return &cobra.Command{
+		Use:   "workload [id]",
+		Short: "Delete a workload by ID",
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			ctx := context.Background()
+			workloadID := args[0]
+			handler.DeleteWorkload(ctx, workloadID)
+		},
+	}
 }

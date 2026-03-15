@@ -75,3 +75,10 @@ func (i *interactor) CreateWorkload(
 
 	printMultipleWorkloads([]generated.JsonformatterWorkloadResponse{resp})
 }
+
+func (i *interactor) DeleteWorkload(ctx context.Context, workloadID string) {
+	_, err := i.controlplaneClient.WorkloadsApi.ApiV1WorkloadsWorkloadIdDelete(ctx, workloadID)
+	if err != nil {
+		panic(err)
+	}
+}

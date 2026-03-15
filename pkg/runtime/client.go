@@ -3,9 +3,12 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/errdefs"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 )
@@ -17,6 +20,8 @@ type RuntimeClient interface {
 	RemoveContainer(context.Context, string) error
 	ListContainers(context.Context, *ContainerFilters) ([]*ContainerBrief, error)
 	GetContainerStatus(context.Context, string) (string, error)
+	PullImage(context.Context, string) error
+	ImageExists(context.Context, string) (bool, error)
 }
 
 type Client struct {
@@ -32,6 +37,16 @@ func NewClient(dockerAPI *client.Client) *Client {
 }
 
 func (c *Client) CreateContainer(ctx context.Context, cnt Container) (string, error) {
+	exists, err := c.ImageExists(ctx, cnt.Image)
+	if err != nil {
+		return "", fmt.Errorf("error checking if image exists: %w", err)
+	}
+	if !exists {
+		if err := c.PullImage(ctx, cnt.Image); err != nil {
+			return "", fmt.Errorf("error pulling image %s: %w", cnt.Image, err)
+		}
+	}
+
 	var portBindings nat.PortMap
 	var exposedPorts nat.PortSet
 
@@ -136,4 +151,25 @@ func (c *Client) ListContainers(ctx context.Context, listFitlers *ContainerFilte
 		)
 	}
 	return containerEntities, nil
+}
+
+func (c *Client) PullImage(ctx context.Context, imageRef string) error {
+	reader, err := c.dockerAPI.ImagePull(ctx, imageRef, image.PullOptions{})
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+	_, err = io.Copy(io.Discard, reader)
+	return err
+}
+
+func (c *Client) ImageExists(ctx context.Context, imageRef string) (bool, error) {
+	_, err := c.dockerAPI.ImageInspect(ctx, imageRef)
+	if err != nil {
+		if errdefs.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }

@@ -10,6 +10,7 @@ type WorkloadLogic interface {
 	GetWorkloadByID(ctx context.Context, workloadID string)
 	ListWorkloads(ctx context.Context, status *string, cpu *int32, ram *int32)
 	CreateWorkload(ctx context.Context, raw []byte, isYAML bool)
+	DeleteWorkload(ctx context.Context, workloadID string)
 }
 
 type Handler interface {
