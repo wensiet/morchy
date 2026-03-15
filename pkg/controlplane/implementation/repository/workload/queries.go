@@ -10,9 +10,9 @@ import (
 type queries struct {
 }
 
-func (q queries) SelectManyWorkloads(statusEq *string, limits *runtime.ResourceLimits) (string, []any) {
+func (q queries) SelectManyWorkloads(statusEq *string, limits *runtime.ResourceLimits, schedulableOnly bool) (string, []any) {
 	query := `
-	SELECT 
+	SELECT
 		w.id, w.status, w.created_at,
 		s.id, s.image, s.cpu, s.ram, s.command, s.env, s.container_port, s.host_port,
 		l.workload_id
@@ -38,7 +38,9 @@ func (q queries) SelectManyWorkloads(statusEq *string, limits *runtime.ResourceL
 		args = append(args, limits.RAM)
 	}
 
-	conditions = append(conditions, "l.workload_id IS NULL")
+	if schedulableOnly {
+		conditions = append(conditions, "l.workload_id IS NULL")
+	}
 
 	if len(conditions) > 0 {
 		query += " WHERE " + strings.Join(conditions, " AND ")

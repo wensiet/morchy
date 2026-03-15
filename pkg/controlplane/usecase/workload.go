@@ -128,12 +128,12 @@ func (i *interactor) GetWorkload(ctx context.Context, workloadID string) (*workl
 	return workload, nil
 }
 
-func (i *interactor) ListWorkloads(ctx context.Context, statusEq *string, resourceLte *runtime.ResourceLimits) ([]*workload.Workload, error) {
+func (i *interactor) ListWorkloads(ctx context.Context, statusEq *string, resourceLte *runtime.ResourceLimits, schedulableOnly bool) ([]*workload.Workload, error) {
 	logger := i.logger.With(
 		zap.String(domain.SDomain, domain.SWorkload),
 	)
 
-	workloads, err := i.workloadRepo.ListWorkloads(ctx, statusEq, resourceLte)
+	workloads, err := i.workloadRepo.ListWorkloads(ctx, statusEq, resourceLte, schedulableOnly)
 	if err != nil {
 		logger.Error("failed to list workloads", zap.Error(err))
 		return nil, err

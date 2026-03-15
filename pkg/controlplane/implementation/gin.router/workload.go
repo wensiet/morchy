@@ -1,4 +1,3 @@
-package ginrouter
 
 import (
 	"net/http"
@@ -36,9 +35,10 @@ func validateWorkloadID(workloadID string) error {
 //	@Router			/api/v1/workloads [get]
 func (rh *RouterHandler) listWorkloads(c *gin.Context) {
 	var queryParams struct {
-		StatusEq *string `form:"status" example:"new"`
-		CPU      *uint   `form:"cpu" example:"100"`
-		RAM      *uint   `form:"ram" example:"256"`
+		StatusEq        *string `form:"status" example:"new"`
+		CPU             *uint   `form:"cpu" example:"100"`
+		RAM             *uint   `form:"ram" example:"256"`
+		SchedulableOnly *bool   `form:"schedulable_only" example:"true"`
 	}
 	err := c.ShouldBindQuery(&queryParams)
 	if err != nil {
@@ -53,7 +53,12 @@ func (rh *RouterHandler) listWorkloads(c *gin.Context) {
 		}
 	}
 
-	workloads, err := rh.ucHandler.ListWorkloads(c, queryParams.StatusEq, resorceFilter)
+	schedulableOnly := false
+	if queryParams.SchedulableOnly != nil {
+		schedulableOnly = *queryParams.SchedulableOnly
+	}
+
+	workloads, err := rh.ucHandler.ListWorkloads(c, queryParams.StatusEq, resorceFilter, schedulableOnly)
 	if err != nil {
 		handleError(c, err)
 		return

@@ -8,7 +8,7 @@ import (
 )
 
 type Repository interface {
-	ListWorkloads(context.Context, *string, *runtime.ResourceLimits) ([]*Workload, error)
+	ListWorkloads(context.Context, *string, *runtime.ResourceLimits, bool) ([]*Workload, error)
 	CreateWorkload(context.Context, Workload) (*Workload, error)
 	GetWorkload(context.Context, string) (*Workload, error)
 	DeleteWorkload(ctx context.Context, workloadID string) error

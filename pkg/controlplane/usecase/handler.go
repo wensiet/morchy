@@ -10,7 +10,7 @@ import (
 )
 
 type WorkloadLogic interface {
-	ListWorkloads(ctx context.Context, statusEq *string, resourceLte *runtime.ResourceLimits) ([]*workload.Workload, error)
+	ListWorkloads(ctx context.Context, statusEq *string, resourceLte *runtime.ResourceLimits, schedulableOnly bool) ([]*workload.Workload, error)
 	GetWorkload(context.Context, string) (*workload.Workload, error)
 	CreateWorkload(ctx context.Context, workloadSpec workload.WorkloadSpec) (*workload.Workload, error)
 	DeleteWorkload(context.Context, string) error

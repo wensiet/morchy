@@ -38,8 +38,8 @@ func (r *Repository) workloadPrimitiveSelect(ctx context.Context, query string, 
 	return w.ToDomain(), nil
 }
 
-func (r *Repository) ListWorkloads(ctx context.Context, status *string, resources *runtime.ResourceLimits) ([]*workload.Workload, error) {
-	query, arguments := r.queries.SelectManyWorkloads(status, resources)
+func (r *Repository) ListWorkloads(ctx context.Context, status *string, resources *runtime.ResourceLimits, schedulableOnly bool) ([]*workload.Workload, error) {
+	query, arguments := r.queries.SelectManyWorkloads(status, resources, schedulableOnly)
 	rows, err := r.db.Query(ctx, query, arguments...)
 	if err != nil {
 		return nil, domain.ErrorWorkloadRepositoryInternalError.Wrap(err)

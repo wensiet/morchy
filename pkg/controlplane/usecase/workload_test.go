@@ -71,10 +71,10 @@ func TestInteractor_ListWorkloads(t *testing.T) {
 			testutil.NewTestWorkload("workload-2"),
 		}
 
-		mockRepo.EXPECT().ListWorkloads(mock.Anything, (*string)(nil), (*runtime.ResourceLimits)(nil)).
+		mockRepo.EXPECT().ListWorkloads(mock.Anything, (*string)(nil), (*runtime.ResourceLimits)(nil), false).
 			Return(expectedWorkloads, nil)
 
-		result, err := interactor.ListWorkloads(context.Background(), nil, nil)
+		result, err := interactor.ListWorkloads(context.Background(), nil, nil, false)
 
 		require.NoError(t, err)
 		require.Equal(t, 2, len(result))
@@ -95,10 +95,10 @@ func TestInteractor_ListWorkloads(t *testing.T) {
 			testutil.NewTestWorkload("workload-1"),
 		}
 
-		mockRepo.EXPECT().ListWorkloads(mock.Anything, &status, (*runtime.ResourceLimits)(nil)).
+		mockRepo.EXPECT().ListWorkloads(mock.Anything, &status, (*runtime.ResourceLimits)(nil), false).
 			Return(expectedWorkloads, nil)
 
-		result, err := interactor.ListWorkloads(context.Background(), &status, nil)
+		result, err := interactor.ListWorkloads(context.Background(), &status, nil, false)
 
 		require.NoError(t, err)
 		require.Equal(t, 1, len(result))
@@ -112,10 +112,10 @@ func TestInteractor_ListWorkloads(t *testing.T) {
 		logger := testutil.TestLogger()
 		interactor := NewHandler(logger, mockRepo, mockFactory, mockDB, 30, 10, 300)
 
-		mockRepo.EXPECT().ListWorkloads(mock.Anything, mock.Anything, mock.Anything).
+		mockRepo.EXPECT().ListWorkloads(mock.Anything, mock.Anything, mock.Anything, false).
 			Return(nil, errors.New("database error"))
 
-		result, err := interactor.ListWorkloads(context.Background(), nil, nil)
+		result, err := interactor.ListWorkloads(context.Background(), nil, nil, false)
 
 		require.Error(t, err)
 		require.Nil(t, result)
