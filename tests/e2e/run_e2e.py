@@ -37,7 +37,9 @@ def log(msg):
 
 def run_cmd(cmd, check=True, capture_output=True, env=None):
     if capture_output:
-        result = subprocess.run(cmd, capture_output=True, text=True, env=env, check=False)
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, env=env, check=False
+        )
         if check and result.returncode != 0:
             log(f"Command failed: {' '.join(cmd)}")
             log(f"STDERR: {result.stderr}")
@@ -70,7 +72,9 @@ def db_conn():
 
 def start_postgres():
     log("Starting PostgreSQL...")
-    result = run_cmd(["docker", "ps", "-aq", "-f", "name=morchy-e2e-postgres"], check=False)
+    result = run_cmd(
+        ["docker", "ps", "-aq", "-f", "name=morchy-e2e-postgres"], check=False
+    )
     if result.stdout.strip():
         log("PostgreSQL container exists, stopping...")
         run_cmd(["docker", "rm", "-f", "morchy-e2e-postgres"], check=False)
@@ -123,9 +127,7 @@ def clean_db():
 
 def start_controlplane():
     log("Starting control plane...")
-    db_url = (
-        f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=disable"
-    )
+    db_url = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=disable"
     env = os.environ.copy()
     cp = subprocess.Popen(
         [str(BIN_DIR / "controlplane"), "--db", db_url, "--port", str(CP_PORT)],
@@ -145,10 +147,14 @@ def start_agent(node_id, reserved_cpu=1000, reserved_ram=4096):
     agent = subprocess.Popen(
         [
             str(BIN_DIR / "agent"),
-            "--controlplane", f"http://localhost:{CP_PORT}",
-            "--node-id", node_id,
-            "--reserved-cpu", str(reserved_cpu),
-            "--reserved-ram", str(reserved_ram),
+            "--controlplane",
+            f"http://localhost:{CP_PORT}",
+            "--node-id",
+            node_id,
+            "--reserved-cpu",
+            str(reserved_cpu),
+            "--reserved-ram",
+            str(reserved_ram),
         ],
         stdout=log_file,
         stderr=subprocess.STDOUT,
@@ -204,15 +210,21 @@ def wait_for_status(wl_id, status, timeout=TIMEOUT):
             return wl
 
         if time.time() - last_check >= check_interval:
-            result = run_cmd(["docker", "ps", "-a", "--filter", f"name={wl_id}"], check=False, env=os.environ.copy())
+            result = run_cmd(
+                ["docker", "ps", "-a", "--filter", f"name={wl_id}"],
+                check=False,
+                env=os.environ.copy(),
+            )
             if result.stdout.strip():
-                lines = result.stdout.strip().split('\n')
+                lines = result.stdout.strip().split("\n")
                 if len(lines) > 1:
                     log(f"Container: {lines[1]}")
             last_check = time.time()
 
         time.sleep(POLL_INTERVAL)
-    raise RuntimeError(f"Timeout waiting for status {status}, last status: {last_status}")
+    raise RuntimeError(
+        f"Timeout waiting for status {status}, last status: {last_status}"
+    )
 
 
 def wait_for_lease(wl_id, timeout=TIMEOUT):
@@ -228,11 +240,16 @@ def wait_for_lease(wl_id, timeout=TIMEOUT):
 def wait_for_container_running(wl_id, timeout=TIMEOUT):
     start = time.time()
     while time.time() - start < timeout:
-        result = run_cmd(["docker", "ps", "--filter", f"name={wl_id}", "--format", "{{.Status}}"], check=False, env=os.environ.copy())
+        result = run_cmd(
+            ["docker", "ps", "--filter", f"name={wl_id}", "--format", "{{.Status}}"],
+            check=False,
+            env=os.environ.copy(),
+        )
         if result.stdout.strip() and "Up" in result.stdout:
             return True
         time.sleep(POLL_INTERVAL)
-    raise RuntimeError(f"Timeout waiting for container to be running")
+    raise RuntimeError("Timeout waiting for container to be running")
+
 
 def test_basic_acquisition():
     log("\n=== Test: Basic Workload Acquisition ===")
@@ -258,11 +275,15 @@ def test_basic_acquisition():
         log("Container is running")
 
         wl = get_workload(wl["id"])
-        assert wl["status"] in ["pending", "active"], f"Expected 'pending' or 'active', got {wl['status']}"
+        assert wl["status"] in ["pending", "active"], (
+            f"Expected 'pending' or 'active', got {wl['status']}"
+        )
         log(f"Workload status: {wl['status']}")
 
         lease = wait_for_lease(wl["id"])
-        assert lease["node_id"] == "agent-1", f"Expected agent-1, got {lease['node_id']}"
+        assert lease["node_id"] == "agent-1", (
+            f"Expected agent-1, got {lease['node_id']}"
+        )
         log(f"Lease held by {lease['node_id']}")
 
         conn = db_conn()
@@ -274,11 +295,17 @@ def test_basic_acquisition():
         assert count == 1, f"Expected 1 lease, got {count}"
         log("Test PASSED")
     except Exception as e:
-        log(f"Checking agent logs...")
+        log("Checking agent logs...")
         try:
             with open("/tmp/agent_agent-1.log", "r") as f:
                 lines = f.readlines()
-                errors = [line for line in lines if "error" in line.lower() or "fail" in line.lower() or "panic" in line.lower()]
+                errors = [
+                    line
+                    for line in lines
+                    if "error" in line.lower()
+                    or "fail" in line.lower()
+                    or "panic" in line.lower()
+                ]
                 if errors:
                     log(f"Agent errors: {''.join(errors[-10:])}")
                 else:
@@ -307,7 +334,11 @@ def test_multiple_workloads():
         for i in range(count):
             spec = {
                 "image": "busybox:latest",
-                "command": ["sh", "-c", f"while true; do echo multi-{i}; sleep 10; done"],
+                "command": [
+                    "sh",
+                    "-c",
+                    f"while true; do echo multi-{i}; sleep 10; done",
+                ],
                 "cpu": 50,
                 "ram": 128,
                 "env": {},
@@ -352,7 +383,9 @@ def test_exclusive_leases():
         wait_for_container_running(wl["id"])
         lease = wait_for_lease(wl["id"])
         node_id = lease["node_id"]
-        assert node_id in ["agent-0", "agent-1", "agent-2"], f"Unexpected node: {node_id}"
+        assert node_id in ["agent-0", "agent-1", "agent-2"], (
+            f"Unexpected node: {node_id}"
+        )
         log(f"Workload acquired by {node_id}")
 
         conn = db_conn()
@@ -393,7 +426,9 @@ def test_rescheduling():
 
         wait_for_container_running(wl["id"])
         lease = wait_for_lease(wl["id"])
-        assert lease["node_id"] == "agent-a", f"Expected agent-a, got {lease['node_id']}"
+        assert lease["node_id"] == "agent-a", (
+            f"Expected agent-a, got {lease['node_id']}"
+        )
         log("Workload initially on agent-a")
 
         log("Stopping agent-a...")
@@ -412,7 +447,9 @@ def test_rescheduling():
 
         wait_for_container_running(wl["id"])
         wl = get_workload(wl["id"])
-        assert wl["status"] in ["pending", "active"], f"Expected pending or active, got {wl['status']}"
+        assert wl["status"] in ["pending", "active"], (
+            f"Expected pending or active, got {wl['status']}"
+        )
         log("Workload rescheduled to agent-b")
         log("Test PASSED")
     finally:
@@ -448,7 +485,9 @@ def main():
         sys.exit(1)
     finally:
         log("\nCleaning up...")
-        result = run_cmd(["docker", "ps", "-q", "-f", "name=morchy-e2e-postgres"], check=False)
+        result = run_cmd(
+            ["docker", "ps", "-q", "-f", "name=morchy-e2e-postgres"], check=False
+        )
         if result.stdout.strip():
             run_cmd(["docker", "rm", "-f", result.stdout.strip().strip()], check=False)
 
