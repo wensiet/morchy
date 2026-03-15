@@ -1,3 +1,4 @@
+package ginrouter
 
 import (
 	"net/http"
