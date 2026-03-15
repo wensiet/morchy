@@ -34,6 +34,7 @@ jobs:
           go build -o dist/controlplane-${GOOS}-${GOARCH} cmd/controlplane/main.go
           go build -o dist/agent-${GOOS}-${GOARCH} cmd/agent/main.go
           go build -o dist/mctl-${GOOS}-${GOARCH} cmd/mctl/main.go
+          go build -o dist/edge-${GOOS}-${GOARCH} cmd/edge/main.go
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
