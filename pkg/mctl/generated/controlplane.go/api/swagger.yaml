@@ -241,6 +241,55 @@ paths:
                   type: string
                 x-content-type: application/json
   /api/v1/workloads/{workload_id}/lease:
+    get:
+      tags:
+      - leases
+      summary: Get lease for workload
+      description: Get the current lease for a specific workload
+      parameters:
+      - name: workload_id
+        in: path
+        description: Workload ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          minLength: 1
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/jsonformatter.LeaseResponse"
+        "400":
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+                x-content-type: application/json
+        "404":
+          description: Lease not found
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+                x-content-type: application/json
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+                x-content-type: application/json
     put:
       tags:
       - leases

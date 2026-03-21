@@ -24,6 +24,7 @@ Class | Method | HTTP request | Description
 *EdgesApi* | [**ApiV1EdgesGet**](docs/EdgesApi.md#apiv1edgesget) | **Get** /api/v1/edges | List edges
 *EventsApi* | [**ApiV1EventsPost**](docs/EventsApi.md#apiv1eventspost) | **Post** /api/v1/events | Push event
 *LeasesApi* | [**ApiV1WorkloadsWorkloadIdLeaseDelete**](docs/LeasesApi.md#apiv1workloadsworkloadidleasedelete) | **Delete** /api/v1/workloads/{workload_id}/lease | Release a lease
+*LeasesApi* | [**ApiV1WorkloadsWorkloadIdLeaseGet**](docs/LeasesApi.md#apiv1workloadsworkloadidleaseget) | **Get** /api/v1/workloads/{workload_id}/lease | Get lease for workload
 *LeasesApi* | [**ApiV1WorkloadsWorkloadIdLeasePut**](docs/LeasesApi.md#apiv1workloadsworkloadidleaseput) | **Put** /api/v1/workloads/{workload_id}/lease | Extend a lease
 *WorkloadsApi* | [**ApiV1WorkloadsGet**](docs/WorkloadsApi.md#apiv1workloadsget) | **Get** /api/v1/workloads | List workloads
 *WorkloadsApi* | [**ApiV1WorkloadsPost**](docs/WorkloadsApi.md#apiv1workloadspost) | **Post** /api/v1/workloads | Create workload

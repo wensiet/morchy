@@ -99,6 +99,23 @@ func (i *interactor) ExpireLeases(ctx context.Context) error {
 	return nil
 }
 
+func (i *interactor) GetLeaseByWorkloadID(ctx context.Context, workloadId string) (*workload.Lease, error) {
+	logger := i.logger.With(
+		zap.String(domain.SDomain, domain.SWorkload),
+		zap.String(domain.SWorkloadID, workloadId),
+	)
+
+	lease, err := i.workloadRepo.GetLeaseByWorkloadID(ctx, workloadId)
+	if err != nil {
+		if oopsErr, ok := oops.AsOops(err); ok && oopsErr.Code() == string(domain.NotFound) {
+			return nil, err
+		}
+		logger.Error("failed to get lease", zap.Error(err))
+		return nil, err
+	}
+	return lease, nil
+}
+
 func (i *interactor) DeleteLease(ctx context.Context, nodeId, workloadId string) error {
 	logger := i.logger.With(
 		zap.String(domain.SDomain, domain.SWorkload),

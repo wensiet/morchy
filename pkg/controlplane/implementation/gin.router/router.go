@@ -28,6 +28,7 @@ func (rh *RouterHandler) setWorkloadRoutes(apiV1 gin.RouterGroup) {
 	apiV1.GET("/workloads/:workload_id", rh.getWorkload)
 	apiV1.POST("/workloads", rh.createWorkload)
 	apiV1.DELETE("/workloads/:workload_id", rh.deleteWorkload)
+	apiV1.GET("/workloads/:workload_id/lease", rh.getLease)
 	apiV1.PUT("/workloads/:workload_id/lease", rh.putLease)
 	apiV1.DELETE("/workloads/:workload_id/lease", rh.deleteLease)
 	apiV1.POST("/events", rh.pushEvent)

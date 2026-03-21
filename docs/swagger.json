@@ -301,6 +301,64 @@
             }
         },
         "/api/v1/workloads/{workload_id}/lease": {
+            "get": {
+                "description": "Get the current lease for a specific workload",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "leases"
+                ],
+                "summary": "Get lease for workload",
+                "parameters": [
+                    {
+                        "minLength": 1,
+                        "type": "string",
+                        "description": "Workload ID",
+                        "name": "workload_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/jsonformatter.LeaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Lease not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
             "put": {
                 "description": "Extend a lease for a specific workload on a given node",
                 "consumes": [

@@ -15,6 +15,33 @@ func validateNodeID(nodeID string) error {
 	return nil
 }
 
+// getLease godoc
+//
+//	@Summary		Get lease for workload
+//	@Description	Get the current lease for a specific workload
+//	@Tags			leases
+//	@Accept			json
+//	@Produce		json
+//	@Param			workload_id	path		string	true	"Workload ID"	minlength(1)
+//	@Success		200			{object}	jsonformatter.LeaseResponse
+//	@Failure		400			{object}	map[string]string	"Invalid request parameters"
+//	@Failure		404			{object}	map[string]string	"Lease not found"
+//	@Failure		500			{object}	map[string]string	"Internal server error"
+//	@Router			/api/v1/workloads/{workload_id}/lease [get]
+func (rh *RouterHandler) getLease(c *gin.Context) {
+	workloadID := c.Param("workload_id")
+	if err := validateWorkloadID(workloadID); err != nil {
+		handleError(c, err)
+		return
+	}
+	lease, err := rh.ucHandler.GetLeaseByWorkloadID(c, workloadID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, jsonformatter.NewLeaseResponseFromDomain(lease))
+}
+
 // putLease godoc
 //
 //	@Summary		Extend a lease
