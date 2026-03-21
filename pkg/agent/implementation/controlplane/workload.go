@@ -18,7 +18,6 @@ func (c *Client) ListAvailableWorkloads(ctx context.Context, limits runtime.Reso
 		SetHeader("Accept", "application/json").
 		SetQueryParam("cpu", fmt.Sprintf("%d", limits.CPU)).
 		SetQueryParam("ram", fmt.Sprintf("%d", limits.RAM)).
-		SetQueryParam("status", "new").
 		SetQueryParam("schedulable_only", "true").
 		SetResult(&workloads).
 		Get(c.baseURL + "/api/v1/workloads")

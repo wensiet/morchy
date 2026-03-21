@@ -15,45 +15,48 @@ import (
 )
 
 func (i *interactor) identifyWorkloadStatusFromEvents(events []*workload.Event, lease *workload.Lease, stuckTimeout int) workload.WorkloadStatus {
-	/*
-		Gather status strategy:
-		- PENDING if workload is created, has no leases
-		- STUCK if workload has no leases more than N seconds
-		- ACTIVE if workload is running, with last max(N) success healthchecks
-		- FAILED if workload is running, with last max(N) failed healthcheckes
-		- DEGRADED (extra) if worklad is running, with flaping healtchecks
-	*/
 	sort.Slice(events, func(i, j int) bool {
 		return events[i].ProducedAt.Before(events[j].ProducedAt)
 	})
 
 	if lease == nil {
-		if len(events) > 0 && events[len(events)-1].ProducedAt.Add(time.Duration(i.stuckTimeout)*time.Second).Before(time.Now()) {
+		if len(events) > 0 && events[len(events)-1].ProducedAt.Add(time.Duration(stuckTimeout)*time.Second).Before(time.Now()) {
 			return workload.StuckWorkloadStatus
 		}
 		return workload.PendingWorkloadStatus
 	}
 
-	lastStatus := workload.PendingWorkloadStatus
+	if len(events) < 2 {
+		return workload.PendingWorkloadStatus
+	}
 
 	type briefHealthcheckPayload struct {
 		Status string `json:"status"`
 	}
 
-	totalFailedStatuses := 0
-	for _, event := range events {
-		var payload *briefHealthcheckPayload
+	lastTwoEvents := events[len(events)-2:]
+	successCount := 0
+	failureCount := 0
+
+	for _, event := range lastTwoEvents {
+		var payload briefHealthcheckPayload
 		_ = json.Unmarshal(event.Payload, &payload)
-		if payload.Status != domain.SSuccess {
-			totalFailedStatuses += 1
+		if payload.Status == domain.SSuccess {
+			successCount++
+		} else {
+			failureCount++
 		}
 	}
 
-	if totalFailedStatuses != 0 && totalFailedStatuses == len(events)/2 {
-		return workload.DegradedWorkloadStatus
+	if successCount == 2 {
+		return workload.ActiveWorkloadStatus
 	}
 
-	return lastStatus
+	if failureCount == 2 {
+		return workload.FailedWorkloadStatus
+	}
+
+	return workload.DegradedWorkloadStatus
 }
 
 func (i *interactor) CreateWorkload(ctx context.Context, workloadSpec workload.WorkloadSpec) (*workload.Workload, error) {
@@ -133,12 +136,52 @@ func (i *interactor) ListWorkloads(ctx context.Context, statusEq *string, resour
 		zap.String(domain.SDomain, domain.SWorkload),
 	)
 
-	workloads, err := i.workloadRepo.ListWorkloads(ctx, statusEq, resourceLte, schedulableOnly)
+	workloads, err := i.workloadRepo.ListWorkloads(ctx, nil, resourceLte, schedulableOnly)
 	if err != nil {
 		logger.Error("failed to list workloads", zap.Error(err))
 		return nil, err
 	}
-	return workloads, err
+
+	for _, wl := range workloads {
+		events, err := i.workloadRepo.ListEvents(
+			ctx,
+			map[string]string{
+				domain.SAction:     domain.SHealthcheck,
+				domain.SWorkloadID: wl.ID,
+			},
+			i.eventListLimit,
+		)
+		if err != nil {
+			logger.Warn("failed to get workload events", zap.String(domain.SWorkloadID, wl.ID), zap.Error(err))
+			continue
+		}
+
+		lease, err := i.workloadRepo.GetLeaseByWorkloadID(ctx, wl.ID)
+		if err != nil {
+			oopsErr, _ := oops.AsOops(err)
+			if oopsErr.Code() != string(domain.NotFound) {
+				logger.Warn("failed to get workload lease", zap.String(domain.SWorkloadID, wl.ID), zap.Error(err))
+			}
+		}
+
+		if len(events) == 0 && lease == nil {
+			continue
+		}
+
+		wl.Status = i.identifyWorkloadStatusFromEvents(events, lease, i.stuckTimeout)
+	}
+
+	if statusEq != nil {
+		filtered := make([]*workload.Workload, 0)
+		for _, wl := range workloads {
+			if string(wl.Status) == *statusEq {
+				filtered = append(filtered, wl)
+			}
+		}
+		return filtered, nil
+	}
+
+	return workloads, nil
 }
 
 func (i *interactor) DeleteWorkload(ctx context.Context, workloadID string) error {

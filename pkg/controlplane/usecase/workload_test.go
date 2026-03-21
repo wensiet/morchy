@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -74,6 +75,19 @@ func TestInteractor_ListWorkloads(t *testing.T) {
 		mockRepo.EXPECT().ListWorkloads(mock.Anything, (*string)(nil), (*runtime.ResourceLimits)(nil), false).
 			Return(expectedWorkloads, nil)
 
+		mockRepo.EXPECT().ListEvents(mock.Anything, mock.MatchedBy(func(m map[string]string) bool {
+			return m["workload_id"] == "workload-1"
+		}), 10).Return([]*workload.Event{}, nil)
+
+		mockRepo.EXPECT().ListEvents(mock.Anything, mock.MatchedBy(func(m map[string]string) bool {
+			return m["workload_id"] == "workload-2"
+		}), 10).Return([]*workload.Event{}, nil)
+
+		mockRepo.EXPECT().GetLeaseByWorkloadID(mock.Anything, "workload-1").
+			Return(nil, domain.ErrorWorkloadRepositoryNotFound.New("not found"))
+		mockRepo.EXPECT().GetLeaseByWorkloadID(mock.Anything, "workload-2").
+			Return(nil, domain.ErrorWorkloadRepositoryNotFound.New("not found"))
+
 		result, err := interactor.ListWorkloads(context.Background(), nil, nil, false)
 
 		require.NoError(t, err)
@@ -95,8 +109,29 @@ func TestInteractor_ListWorkloads(t *testing.T) {
 			testutil.NewTestWorkload("workload-1"),
 		}
 
-		mockRepo.EXPECT().ListWorkloads(mock.Anything, &status, (*runtime.ResourceLimits)(nil), false).
+		successEvent1, _ := json.Marshal(map[string]string{
+			"workload_id": "workload-1",
+			"action":      "healthcheck",
+			"status":      "success",
+		})
+		successEvent2, _ := json.Marshal(map[string]string{
+			"workload_id": "workload-1",
+			"action":      "healthcheck",
+			"status":      "success",
+		})
+
+		mockRepo.EXPECT().ListWorkloads(mock.Anything, (*string)(nil), (*runtime.ResourceLimits)(nil), false).
 			Return(expectedWorkloads, nil)
+
+		mockRepo.EXPECT().ListEvents(mock.Anything, mock.MatchedBy(func(m map[string]string) bool {
+			return m["workload_id"] == "workload-1"
+		}), 10).Return([]*workload.Event{
+			testutil.NewTestEvent("event-1", "workload-1", "node-1", successEvent1),
+			testutil.NewTestEvent("event-2", "workload-1", "node-1", successEvent2),
+		}, nil)
+
+		mockRepo.EXPECT().GetLeaseByWorkloadID(mock.Anything, "workload-1").
+			Return(&workload.Lease{NodeID: "node-1", WorkloadID: "workload-1"}, nil)
 
 		result, err := interactor.ListWorkloads(context.Background(), &status, nil, false)
 
