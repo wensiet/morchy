@@ -9,8 +9,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	ginrouter "github.com/wernsiet/morchy/pkg/controlplane/implementation/gin.router"
+	middlewareauth "github.com/wernsiet/morchy/pkg/controlplane/infrastructure/middleware"
 	"github.com/wernsiet/morchy/pkg/controlplane/implementation/repository/workload"
 	"github.com/wernsiet/morchy/pkg/controlplane/infrastructure"
+	tlsconfig "github.com/wernsiet/morchy/pkg/controlplane/infrastructure/tls"
 	"github.com/wernsiet/morchy/pkg/controlplane/usecase"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -29,6 +31,26 @@ func newContext(lc fx.Lifecycle) context.Context {
 	return ctx
 }
 
+func newSeedTokenMiddleware(cfg *Config) middlewareauth.SeedTokenConfig {
+	return middlewareauth.SeedTokenConfig{
+		SeedToken: cfg.SeedToken,
+		DevMode:   cfg.DevMode,
+	}
+}
+
+func newMTLSMiddleware(cfg *Config) middlewareauth.MTLSConfig {
+	return middlewareauth.MTLSConfig{
+		DevMode: cfg.DevMode,
+	}
+}
+
+func newDualAuthMiddleware(cfg *Config) middlewareauth.DualAuthConfig {
+	return middlewareauth.DualAuthConfig{
+		SeedToken: cfg.SeedToken,
+		DevMode:   cfg.DevMode,
+	}
+}
+
 func newLogger() (*zap.Logger, error) {
 	return zap.NewDevelopment()
 }
@@ -45,19 +67,29 @@ func newUsecaseHandler(logger *zap.Logger, workloadRepo *workload.Repository, db
 	return usecase.NewHandler(logger, workloadRepo, workload.WorkloadRepoFactory{}, dbPool, cfg.LeaseLifetimeSec, cfg.EventListLimit, cfg.StuckTimeoutSec)
 }
 
-func newRouter(logger *zap.Logger, ucHandler usecase.Handler) *gin.Engine {
+func newRouter(logger *zap.Logger, ucHandler usecase.Handler, seedTokenCfg middlewareauth.SeedTokenConfig, mtlsCfg middlewareauth.MTLSConfig, dualAuthCfg middlewareauth.DualAuthConfig) *gin.Engine {
 	r := infrastructure.NewRouter(logger)
 	rH := ginrouter.NewRouterHandler(logger, ucHandler)
-	rH.SetRoutes(r)
+	rH.SetRoutes(r, seedTokenCfg, mtlsCfg, dualAuthCfg)
 	return r
 }
 
-func newHTTPServer(cfg *Config, r *gin.Engine) *http.Server {
-	return &http.Server{
+func newHTTPServer(cfg *Config, r *gin.Engine) (*http.Server, error) {
+	server := &http.Server{
 		Handler:           r,
 		Addr:              fmt.Sprintf(":%d", cfg.Port),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
+
+	if cfg.TLSCertFile != "" && cfg.TLSKeyFile != "" && cfg.TLSCAFile != "" {
+		tlsConfig, err := tlsconfig.CreateServerTLSConfig(cfg.TLSCertFile, cfg.TLSKeyFile, cfg.TLSCAFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create TLS config: %w", err)
+		}
+		server.TLSConfig = tlsConfig
+	}
+
+	return server, nil
 }
 
 func newBackgroundTaskRunner(logger *zap.Logger, ucHandler usecase.Handler) *infrastructure.BackgroundTaskRunner {
@@ -70,7 +102,13 @@ func runServer(lc fx.Lifecycle, server *http.Server, logger *zap.Logger) {
 	lc.Append(fx.Hook{
 		OnStart: func(_ context.Context) error {
 			go func() {
-				if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				var err error
+				if server.TLSConfig != nil {
+					err = server.ListenAndServeTLS("", "")
+				} else {
+					err = server.ListenAndServe()
+				}
+				if err != nil && err != http.ErrServerClosed {
 					logger.Error("HTTP server crashed", zap.Error(err))
 				}
 			}()

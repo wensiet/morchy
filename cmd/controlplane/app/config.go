@@ -6,4 +6,9 @@ type Config struct {
 	LeaseLifetimeSec  int
 	EventListLimit    int
 	StuckTimeoutSec   int
+	SeedToken         string
+	TLSCertFile       string
+	TLSKeyFile        string
+	TLSCAFile         string
+	DevMode           bool
 }

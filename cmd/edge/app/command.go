@@ -61,6 +61,7 @@ func NewEdgeCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&cfg.ControlPlaneURL, "controlplane", "", "ControlPlane URL")
+	cmd.Flags().StringVar(&cfg.SeedToken, "seed-token", os.Getenv("SEED_TOKEN"), "Seed token for authentication")
 
 	return cmd
 }

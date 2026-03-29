@@ -5,4 +5,7 @@ type Config struct {
 	NodeID          string
 	ReservedRAM     uint
 	ReservedCPU     uint
+	ClientCertFile  string
+	ClientKeyFile   string
+	CACertFile      string
 }

@@ -25,8 +25,12 @@ func newRepository() *repository.Repository {
 	return repository.NewRepository()
 }
 
-func newHTTPClient() *resty.Client {
-	return resty.New()
+func newHTTPClient(cfg *Config) *resty.Client {
+	client := resty.New()
+	if cfg.SeedToken != "" {
+		client.SetHeader("X-Seed-Token", cfg.SeedToken)
+	}
+	return client
 }
 
 func newControlPlaneClient(cfg *Config, http *resty.Client) *controlplane.Client {

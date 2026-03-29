@@ -18,13 +18,20 @@ func NewMCTLCommand() *cobra.Command {
 		controlPlaneURL = "http://localhost:8080"
 	}
 
-	handler := usecase.NewHandler(
-		swagger.NewAPIClient(
-			&swagger.Configuration{
-				BasePath: controlPlaneURL,
-			},
-		),
-	)
+	seedToken := os.Getenv("SEED_TOKEN")
+
+	config := &swagger.Configuration{
+		BasePath: controlPlaneURL,
+	}
+
+	if seedToken != "" {
+		config.DefaultHeader = map[string]string{
+			"X-Seed-Token": seedToken,
+		}
+	}
+
+	apiClient := swagger.NewAPIClient(config)
+	handler := usecase.NewHandler(apiClient)
 
 	cmd := &cobra.Command{
 		Use:   "mctl",
