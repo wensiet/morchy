@@ -58,6 +58,9 @@ func NewAgentCommand() *cobra.Command {
 	root.Flags().StringVar(&cfg.ControlPlaneURL, "controlplane", "", "ControlPlane URL")
 	root.Flags().UintVar(&cfg.ReservedRAM, "reserved-ram", 0, "Reserved RAM bytes")
 	root.Flags().UintVar(&cfg.ReservedCPU, "reserved-cpu", 0, "Reserved CPU units")
+	root.Flags().StringVar(&cfg.ClientCertFile, "client-cert", "", "Client certificate file path")
+	root.Flags().StringVar(&cfg.ClientKeyFile, "client-key", "", "Client key file path")
+	root.Flags().StringVar(&cfg.CACertFile, "ca-cert", "", "CA certificate file path")
 
 	return root
 }

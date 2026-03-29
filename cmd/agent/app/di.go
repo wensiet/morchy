@@ -16,6 +16,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/go-resty/resty/v2"
+	tlsconfig "github.com/wernsiet/morchy/pkg/controlplane/infrastructure/tls"
 )
 
 func newLogger() (*zap.Logger, error) {
@@ -33,8 +34,19 @@ func newDockerRuntime() (*runtime.Client, error) {
 	return runtime.NewClient(api), nil
 }
 
-func newHTTPClient() *resty.Client {
-	return resty.New()
+func newHTTPClient(cfg *Config) *resty.Client {
+	client := resty.New()
+
+	if cfg.ClientCertFile != "" && cfg.ClientKeyFile != "" && cfg.CACertFile != "" {
+		tlsConfig, err := tlsconfig.CreateClientTLSConfig(cfg.ClientCertFile, cfg.ClientKeyFile, cfg.CACertFile)
+		if err != nil {
+			panic(err)
+		}
+
+		client.SetTLSClientConfig(tlsConfig)
+	}
+
+	return client
 }
 
 func newControlPlaneClient(cfg *Config, http *resty.Client) *controlplane.Client {

@@ -27,6 +27,9 @@ func NewControlPlaneCommand() *cobra.Command {
 					newDBPool,
 					newWorkloadRepository,
 					newUsecaseHandler,
+					newSeedTokenMiddleware,
+					newMTLSMiddleware,
+					newDualAuthMiddleware,
 					newRouter,
 					newHTTPServer,
 					newBackgroundTaskRunner,
@@ -65,6 +68,11 @@ func NewControlPlaneCommand() *cobra.Command {
 	cmd.Flags().IntVar(&cfg.LeaseLifetimeSec, "lease-lifetime", 30, "Lease lifetime in seconds before expiration")
 	cmd.Flags().IntVar(&cfg.EventListLimit, "event-list-limit", 5, "Maximum number of events to return per workload")
 	cmd.Flags().IntVar(&cfg.StuckTimeoutSec, "stuck-timeout", 90, "Timeout in seconds before marking a workload as stuck")
+	cmd.Flags().StringVar(&cfg.SeedToken, "seed-token", os.Getenv("SEED_TOKEN"), "Seed token for authentication")
+	cmd.Flags().StringVar(&cfg.TLSCertFile, "tls-cert", "", "TLS certificate file path")
+	cmd.Flags().StringVar(&cfg.TLSKeyFile, "tls-key", "", "TLS key file path")
+	cmd.Flags().StringVar(&cfg.TLSCAFile, "tls-ca-cert", "", "TLS CA certificate file path")
+	cmd.Flags().BoolVar(&cfg.DevMode, "dev-mode", false, "Enable development mode (bypasses authentication)")
 
 	return cmd
 }
