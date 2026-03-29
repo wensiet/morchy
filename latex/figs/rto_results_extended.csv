@@ -1,0 +1,2 @@
+Metric,Min,Max,Avg,Median,StdDev,P90,P95,P99,CI Low,CI High,Trials
+RTO (node failure),27.0s,66.4s,47.8s,48.9s,10.2s,57.9s,59.3s,60.0s,45.8s,49.8s,100

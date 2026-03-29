@@ -1,6 +1,6 @@
 \chapter{Literature Review}
 \label{chap:lr}
-\chaptermark{Second Chapter Heading}
+\chaptermark{Literature Review}
 
 Several literature sources were employed to perform analysis of the problem. Google Scholar and Research Gate served to perform the research on the distributed compute management and pull-model approach. The keywords used to find the sources were "cloud orchestration", "distributed cloud computing", "pull-model". To fetch more practical insights we decided to use official Kubernetes, HashiCorp Nomad and Apache OpenServerless documentation.
 
@@ -10,20 +10,20 @@ Modern orchestration platforms, such as Kubernetes and HashiCorp Nomad, have bec
 
 Similarly, research on service mesh architectures \cite{canal2024mesh} demonstrates that eliminating sidecar proxies through novel control plane designs can significantly reduce control plane overhead compared to traditional approaches like Istio. This sidecar-free architecture for multi-tenant environments provides a viable alternative to heavily-layered orchestration systems, aligning with the lightweight design principles explored in this thesis.
 
-Research by Sebrechts et al. \cite{A} highlights challenges in distributed application management, emphasizing the need for scalable and adaptive orchestration systems. It offers great alternative - distributing operational agents. Similarly, Pantazoglo et al. \cite{C} propose decentralized workload management approaches to improve energy efficiency and reduce coordination overhead in large-scale systems. These studies suggest that centralization, while powerful, can become a bottleneck for resilience and scalability.
+Research by Sebrechts et al. \cite{sebrechts2018orchestrator} highlights challenges in distributed application management, emphasizing the need for scalable and adaptive orchestration systems. It offers great alternative - distributing operational agents. Similarly, Pantazoglou et al. \cite{pantazoglou2015decentralized} propose decentralized workload management approaches to improve energy efficiency and reduce coordination overhead in large-scale systems. These studies suggest that centralization, while powerful, can become a bottleneck for resilience and scalability.
 
 \section{Pull-based and decentralized approaches}
 
-The pull-based paradigm, originally explored in software engineering and version control systems, introduces an alternative model for coordination and synchronization. Godin et al. \cite{B} examined the pull-based software development model and demonstrated its advantages in reducing coordination conflicts and improving modularity. These principles can be adapted to workload orchestration, where worker nodes autonomously retrieve workloads and configurations, thus minimizing reliance on a central scheduler.
+The pull-based paradigm, originally explored in software engineering and version control systems, introduces an alternative model for coordination and synchronization. Godin et al. \cite{godin2013pushes} examined the pull-based software development model and demonstrated its advantages in reducing coordination conflicts and improving modularity. These principles can be adapted to workload orchestration, where worker nodes autonomously retrieve workloads and configurations, thus minimizing reliance on a central scheduler.
 
-Recent research on decentralized cloud computing supports this shift. Pantazoglo et al. \cite{C} and Godin et al. \cite{B} highlight that decentralized and eventually consistent systems can maintain reliability while reducing latency and operational risk. These approaches align with modern distributed architectures that prioritize resilience and fault isolation over strict central coordination.
+Recent research on decentralized cloud computing supports this shift. Pantazoglou et al. \cite{pantazoglou2015decentralized} and Godin et al. \cite{godin2013pushes} highlight that decentralized and eventually consistent systems can maintain reliability while reducing latency and operational risk. These approaches align with modern distributed architectures that prioritize resilience and fault isolation over strict central coordination.
 
 Comprehensive surveys of geo-distributed task scheduling \cite{wu2025task} further emphasize that distributed systems operating across heterogeneous network conditions and region-specific resource constraints require sophisticated coordination approaches. Such systems must balance performance enhancement, fairness assurance, and fault tolerance improvement while managing challenges inherent to geographic distribution, including varying network latency and computational capabilities across locations.
 
 
 \section{Security and reliability concerns}
 
-Infrastructure reliability and security are critical for large-scale deployments. Google Cloud’s production systems rely on strong security models and automated workload verification to ensure service integrity \cite{google_security}. However, such designs also depend on highly centralized control planes, which can create single points of failure. Research on resilient cloud systems emphasizes the need for autonomous components that can recover independently \cite{G} and sustain partial system failures \cite{F, FSup}. Finally, compliance and governance are integral to reliable infrastructure, especially in enterprise and regulated environments. Emerging research also highlights the potential of decentralized and federated cloud management frameworks to enhance resilience and security while reducing reliance on single points of failure.
+Infrastructure reliability and security are critical for large-scale deployments. Google Cloud’s production systems rely on strong security models and automated workload verification to ensure service integrity \cite{google_security}. However, such designs also depend on highly centralized control planes, which can create single points of failure. Research on resilient cloud systems emphasizes the need for autonomous components that can recover independently \cite{liaqat2017federated} and sustain partial system failures \cite{velev2011cloud, rasheed2014data}. Finally, compliance and governance are integral to reliable infrastructure, especially in enterprise and regulated environments. Emerging research also highlights the potential of decentralized and federated cloud management frameworks to enhance resilience and security while reducing reliance on single points of failure.
 
 \section{Summary}
 
