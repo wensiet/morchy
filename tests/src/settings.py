@@ -13,6 +13,8 @@ def get_base_config(env_prefix: str) -> SettingsConfigDict:
 
 class ControlPlaneSettings(BaseSettings):
     url: str = Field(description="Controlplane API url")
+    edge_url: str | None = Field(default=None, description="Edge proxy URL")
+    seed_token: str | None = Field(default=None, description="Seed token for authentication")
 
     model_config = get_base_config("cp_")
 

@@ -2,7 +2,10 @@ package app
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"io"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -22,6 +25,29 @@ func NewMCTLCommand() *cobra.Command {
 
 	config := &swagger.Configuration{
 		BasePath: controlPlaneURL,
+	}
+
+	if strings.HasPrefix(controlPlaneURL, "https://") {
+		tlsConfig := &tls.Config{}
+
+		caCertPath := os.Getenv("CA_CERT")
+		if caCertPath != "" {
+			caCert, err := os.ReadFile(caCertPath)
+			if err != nil {
+				panic(err)
+			}
+			certPool := x509.NewCertPool()
+			certPool.AppendCertsFromPEM(caCert)
+			tlsConfig.RootCAs = certPool
+		} else {
+			tlsConfig.InsecureSkipVerify = true
+		}
+
+		config.HTTPClient = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: tlsConfig,
+			},
+		}
 	}
 
 	if seedToken != "" {

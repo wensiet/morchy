@@ -42,7 +42,7 @@ func CreateServerTLSConfig(certFile, keyFile, caCertFile string) (*tls.Config, e
 
 	return &tls.Config{
 		Certificates: []tls.Certificate{*cert},
-		ClientAuth:   tls.RequireAndVerifyClientCert,
+		ClientAuth:   tls.RequestClientCert,
 		ClientCAs:    certPool,
 		MinVersion:   tls.VersionTLS12,
 	}, nil
@@ -55,19 +55,25 @@ func CreateClientTLSConfig(certFile, keyFile, caCertFile string) (*tls.Config, e
 		}, nil
 	}
 
-	cert, err := LoadTLSCertificate(certFile, keyFile)
-	if err != nil {
-		return nil, err
+	config := &tls.Config{
+		MinVersion: tls.VersionTLS12,
 	}
 
-	certPool, err := LoadCACertPool(caCertFile)
-	if err != nil {
-		return nil, err
+	if certFile != "" && keyFile != "" {
+		cert, err := LoadTLSCertificate(certFile, keyFile)
+		if err != nil {
+			return nil, err
+		}
+		config.Certificates = []tls.Certificate{*cert}
 	}
 
-	return &tls.Config{
-		Certificates: []tls.Certificate{*cert},
-		RootCAs:      certPool,
-		MinVersion:   tls.VersionTLS12,
-	}, nil
+	if caCertFile != "" {
+		certPool, err := LoadCACertPool(caCertFile)
+		if err != nil {
+			return nil, err
+		}
+		config.RootCAs = certPool
+	}
+
+	return config, nil
 }

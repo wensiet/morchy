@@ -27,8 +27,6 @@ func NewControlPlaneCommand() *cobra.Command {
 					newDBPool,
 					newWorkloadRepository,
 					newUsecaseHandler,
-					newSeedTokenMiddleware,
-					newMTLSMiddleware,
 					newDualAuthMiddleware,
 					newRouter,
 					newHTTPServer,

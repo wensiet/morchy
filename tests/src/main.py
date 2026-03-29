@@ -8,6 +8,8 @@ from src.scenarios import (
     MultipleWorkloads,
     Rescheduling,
     ConcurrentWorkloads,
+    EdgeRouting,
+    ControlPlaneResilience,
 )
 
 
@@ -55,6 +57,8 @@ async def main() -> None:
         "MultipleWorkloads": MultipleWorkloads(cp_settings, agent_settings),
         "Rescheduling": Rescheduling(cp_settings, agent_settings),
         "ConcurrentWorkloads": ConcurrentWorkloads(cp_settings, agent_settings),
+        "EdgeRouting": EdgeRouting(cp_settings, agent_settings),
+        "ControlPlaneResilience": ControlPlaneResilience(cp_settings, agent_settings),
     }
 
     if args.scenario == "ALL":

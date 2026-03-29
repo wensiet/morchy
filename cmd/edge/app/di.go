@@ -9,6 +9,7 @@ import (
 	ginzapcontrib "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
+	tlsconfig "github.com/wernsiet/morchy/pkg/controlplane/infrastructure/tls"
 	"github.com/wernsiet/morchy/pkg/edge/implementation/controlplane"
 	ginrouter "github.com/wernsiet/morchy/pkg/edge/implementation/gin.router"
 	"github.com/wernsiet/morchy/pkg/edge/implementation/repository"
@@ -29,6 +30,13 @@ func newHTTPClient(cfg *Config) *resty.Client {
 	client := resty.New()
 	if cfg.SeedToken != "" {
 		client.SetHeader("X-Seed-Token", cfg.SeedToken)
+	}
+	if cfg.CACertFile != "" {
+		tlsConfig, err := tlsconfig.CreateClientTLSConfig("", "", cfg.CACertFile)
+		if err != nil {
+			panic(err)
+		}
+		client.SetTLSClientConfig(tlsConfig)
 	}
 	return client
 }

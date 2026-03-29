@@ -31,19 +31,6 @@ func newContext(lc fx.Lifecycle) context.Context {
 	return ctx
 }
 
-func newSeedTokenMiddleware(cfg *Config) middlewareauth.SeedTokenConfig {
-	return middlewareauth.SeedTokenConfig{
-		SeedToken: cfg.SeedToken,
-		DevMode:   cfg.DevMode,
-	}
-}
-
-func newMTLSMiddleware(cfg *Config) middlewareauth.MTLSConfig {
-	return middlewareauth.MTLSConfig{
-		DevMode: cfg.DevMode,
-	}
-}
-
 func newDualAuthMiddleware(cfg *Config) middlewareauth.DualAuthConfig {
 	return middlewareauth.DualAuthConfig{
 		SeedToken: cfg.SeedToken,
@@ -67,10 +54,10 @@ func newUsecaseHandler(logger *zap.Logger, workloadRepo *workload.Repository, db
 	return usecase.NewHandler(logger, workloadRepo, workload.WorkloadRepoFactory{}, dbPool, cfg.LeaseLifetimeSec, cfg.EventListLimit, cfg.StuckTimeoutSec)
 }
 
-func newRouter(logger *zap.Logger, ucHandler usecase.Handler, seedTokenCfg middlewareauth.SeedTokenConfig, mtlsCfg middlewareauth.MTLSConfig, dualAuthCfg middlewareauth.DualAuthConfig) *gin.Engine {
+func newRouter(logger *zap.Logger, ucHandler usecase.Handler, dualAuthCfg middlewareauth.DualAuthConfig) *gin.Engine {
 	r := infrastructure.NewRouter(logger)
 	rH := ginrouter.NewRouterHandler(logger, ucHandler)
-	rH.SetRoutes(r, seedTokenCfg, mtlsCfg, dualAuthCfg)
+	rH.SetRoutes(r, dualAuthCfg)
 	return r
 }
 
