@@ -6,7 +6,7 @@ FILE ?= main.tex
 
 # Compile LaTeX file to PDF using the Docker image
 pdf:
-	docker run --rm -v $(PWD):/workdir -w /workdir $(LATEX_BUILDER_IMAGE_NAME):$(LATEX_BUILDER_IMAGE_TAG) $(FILE)
+	docker run --rm -v $(PWD):/workdir -w /workdir -u $(id -u):$(id -g) $(LATEX_BUILDER_IMAGE_NAME):$(LATEX_BUILDER_IMAGE_TAG) $(FILE)
 
 # Compile LaTeX file to PDF with cleaning before and after
 clean-pdf:

@@ -48,3 +48,6 @@ sandbox/
 *.bbl
 *.aux
 .DS_Store
+
+.claude/skills
+RESULTS*.md

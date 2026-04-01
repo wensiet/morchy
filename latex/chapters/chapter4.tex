@@ -53,7 +53,7 @@ Nonetheless, the Pull model introduces its own trade-offs:
 
 Upon thorough analysis, it becomes evident that the requirements established in Section~3.5 particularly the 90-second Recovery Time Objective (RTO), resilience to infrastructure failures, and support for autonomous recovery align closely with the core strengths of the Pull model. The capacity for self-healing, network resilience, and decentralized operation directly addresses the business imperatives of minimizing downtime and reducing manual intervention.
 
-Consequently, the Pull model has been selected as the foundational architectural paradigm for the proposed prototype. Furthermore, the design will incorporate mitigations to address its inherent limitations:
+Consequently, the Pull model has been selected as the foundational architectural paradigm for the proposed prototype. This choice is consistent with the broader trend toward availability-first distributed system design \cite{brewer2012cap, decandia2007dynamo}, where partition tolerance and autonomous operation are prioritized over strong consistency. Furthermore, the design will incorporate mitigations to address its inherent limitations:
 
 A configurable, short polling interval to bound recovery latency;
 Optional event-based push notifications to trigger immediate reconciliation when critical updates occur;
@@ -113,7 +113,7 @@ Each node in the data plane runs a lightweight agent process, whose responsibili
     \item Reporting node health and workload status back to the control plane
 \end{itemize}
 
-The agent embodies the Pull model and enables self-healing: if a node reboots or is replaced, the agent automatically re-synchronizes with the control plane, ensuring eventual consistency.
+The agent embodies the Pull model and enables self-healing: if a node reboots or is replaced, the agent automatically re-synchronizes with the control plane, ensuring eventual consistency. This reconciliation pattern follows the principle of declarative state convergence established in large-scale distributed systems \cite{dean2004mapreduce}.
 
 \subsubsection{Workload Execution}
 Workloads are executed in containers to guarantee portability, isolation, and reproducibility across environments. The system uses the Docker Engine as its default container runtime due to its ubiquity, rich ecosystem, and mature tooling. However, the architecture is runtime-agnostic: the agent interfaces with the container runtime via a pluggable abstraction layer (e.g., using the Docker-compatible HTTP API). This design permits future migration to alternative runtimes such as Podman (rootless, daemonless) or CRI-O (Kubernetes-optimized) without modifying core orchestration logic.
@@ -198,7 +198,7 @@ During each iteration, the agent performs the following sequence:
 \item If candidate workloads remain, the agent selects one (using a first-fit strategy) and attempts to acquire a lease by issuing a \newline
 \texttt{PUT /api/v1/workloads/\{id\}/lease?node\_id=\{node\_id\}}
 \newline request to the control plane.
-\item The control plane records the lease in the database, associating the workload identifier with the requesting node's identifier, along with a timestamp. The lease acquisition is atomic: if multiple agents simultaneously attempt to lease the same workload, the database's uniqueness constraint ensures only one succeeds.
+\item The control plane records the lease in the database, associating the workload identifier with the requesting node's identifier, along with a timestamp. This mechanism is inspired by the concept of leases as fault-tolerant coordination primitives introduced by Gray and Cheriton \cite{gray1989leases}, where time-bound locks enable distributed nodes to assert ownership without requiring continuous communication. The lease acquisition is atomic: if multiple agents simultaneously attempt to lease the same workload, the database's uniqueness constraint ensures only one succeeds.
 \end{enumerate}
 
 Once the lease is acquired, the agent transitions the workload locally to the \texttt{pending} status and initiates the container creation process using the Docker Engine API.
@@ -226,7 +226,7 @@ A critical aspect of the system's resilience is its handling of node failures. T
 
 Once a workload's lease expires, the workload becomes available for acquisition by other agents. The system tracks workload status transitions based on event history: if a workload remains in the \texttt{pending} state without a valid lease for more than 90 seconds, it is automatically marked as \texttt{stuck}, indicating a persistent failure to start. Conversely, if a workload in the \texttt{active} state loses its lease, it becomes eligible for rescheduling onto a healthy node.
 
-This design embodies the pull model's self-healing property: failures are detected indirectly through the absence of lease renewals, and recovery occurs automatically as other agents discover and acquire the orphaned workloads. No explicit push-based notification or failure detection mechanism is required from the control plane.
+This design embodies the pull model's self-healing property: failures are detected indirectly through the absence of lease renewals, and recovery occurs automatically as other agents discover and acquire the orphaned workloads. This approach contrasts with consensus-based failure detection used in systems like ZooKeeper \cite{hunt2010zookeeper} or Chubby \cite{burrows2006chubby}, which require quorum agreement on node liveness. By relying on lease expiration as an implicit failure signal, the system avoids the coordination overhead inherent in such protocols. No explicit push-based notification or failure detection mechanism is required from the control plane.
 
 Figure~\ref{fig:seq-fault-tolerance} illustrates the fault tolerance mechanism, including node failure detection and workload rescheduling.
 
