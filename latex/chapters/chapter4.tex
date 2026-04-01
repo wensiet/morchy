@@ -51,7 +51,7 @@ Nonetheless, the Pull model introduces its own trade-offs:
     \item \textbf{Observability complexity}: determining the exact time of state convergence across the fleet requires additional telemetry.
 \end{itemize}
 
-Upon thorough analysis, it becomes evident that the requirements established in Section~3.5 particularly the 90-second Recovery Time Objective (RTO), resilience to infrastructure failures, and support for autonomous recovery align closely with the core strengths of the Pull model. The capacity for self-healing, network resilience, and decentralized operation directly addresses the business imperatives of minimizing downtime and reducing manual intervention.
+Upon thorough analysis, it becomes evident that the requirements established in Section~\ref{sec:requirements} particularly the 90-second Recovery Time Objective (RTO), resilience to infrastructure failures, and support for autonomous recovery align closely with the core strengths of the Pull model. The capacity for self-healing, network resilience, and decentralized operation directly addresses the business imperatives of minimizing downtime and reducing manual intervention.
 
 Consequently, the Pull model has been selected as the foundational architectural paradigm for the proposed prototype. This choice is consistent with the broader trend toward availability-first distributed system design \cite{brewer2012cap, decandia2007dynamo}, where partition tolerance and autonomous operation are prioritized over strong consistency. Furthermore, the design will incorporate mitigations to address its inherent limitations:
 
@@ -131,7 +131,7 @@ This layered, decoupled architecture directly addresses the functional and non-f
 
 \subsection{Architecture Finalization}
 
-Having examined each constituent component of the proposed system the control plane, data plane, agent, Edge ingress layer, and their interconnections it is now possible to consolidate these elements into a coherent and implementable architectural blueprint. The resulting design demonstrates strong alignment with both the functional and non-functional requirements established in Section~3.5.
+Having examined each constituent component of the proposed system the control plane, data plane, agent, Edge ingress layer, and their interconnections it is now possible to consolidate these elements into a coherent and implementable architectural blueprint. The resulting design demonstrates strong alignment with both the functional and non-functional requirements established in Section~\ref{sec:requirements}.
 
 \begin{figure}[h]
 \centering
@@ -269,7 +269,7 @@ The implementation is organized into four main components, each adhering to a la
 \item \textbf{mctl} (\texttt{pkg/mctl/}): Command-line interface for workload submission, querying, and management.
 \end{itemize}
 
-All components communicate exclusively via REST over HTTPS, with the control plane maintaining PostgreSQL as the authoritative data store. The architecture is horizontally scalable: multiple control plane instances can run behind a load balancer, and agents are stateless and homogeneous, enabling elastic scaling of the data plane.
+All components communicate exclusively via REST over HTTPS, with the control plane maintaining PostgreSQL as the authoritative data store. The stateless control plane design enables horizontal scaling: multiple instances can run behind a load balancer without consensus protocols or leader election, since no in-memory state is maintained between requests. Agents are stateless and homogeneous, and the pull-based model distributes scheduling decisions across the agent fleet rather than concentrating them in a central scheduler. The primary scaling ceiling is PostgreSQL throughput under concurrent lease operations rather than the orchestration model itself.
 
 Figure~\ref{fig:seq-end-to-end} presents a comprehensive end-to-end sequence demonstrating the complete lifecycle from workload creation through node failure to automatic recovery.
 

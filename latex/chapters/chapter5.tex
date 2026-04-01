@@ -87,7 +87,7 @@ Table~\ref{tab:rto-results} presents the RTO measurements from node failure scen
 
 The RTO measurements demonstrate that the system can recover from node failures with an average time of 47.8 seconds (95\% CI: [45.8s, 49.8s]). The narrow confidence interval ($\pm$2.0 seconds) indicates highly predictable recovery behavior. The P95 of 59.3 seconds provides a reliable upper bound: 95\% of node failures result in workload recovery within one minute.
 
-The RTO is composed of three phases: (1) lease expiration detection (30 seconds), (2) backup agent polling and lease acquisition (2--20 seconds), and (3) container creation and status reporting (approximately 10--15 seconds). The standard deviation of 10.2 seconds indicates moderate variance in recovery times, primarily driven by differences in container startup times and polling alignment.
+The RTO is composed of three phases: (1) lease expiration detection (up to 30 seconds, depending on the alignment between the background task execution and the last lease renewal), (2) backup agent polling and lease acquisition (2--20 seconds), and (3) container creation and status reporting (approximately 10--15 seconds). The standard deviation of 10.2 seconds indicates moderate variance in recovery times, primarily driven by differences in container startup times and polling alignment.
 
 All 100 trials resulted in successful workload recovery, demonstrating that the lease-based failure detection mechanism operates reliably.
 
@@ -143,16 +143,17 @@ Table~\ref{tab:resource-comparison} compares the control plane resource requirem
 \toprule
 Platform & Control Plane CPU & Control Plane Memory \\
 \midrule
-Kubernetes & 15 vCPU & 22.5 GB \\
-Nomad & 3 vCPU & 1.5--2.25 GB \\
-Proposed System & 0.5 vCPU & 1 GB \\
+Kubernetes (HA) & 13 vCPU & 18.5 GB \\
+Nomad (HA) & 3 vCPU & 1.5--2.25 GB \\
+Proposed System (HA) & 1.75 vCPU & 3.25 GB \\
+Proposed System (single) & 0.5 vCPU & 1 GB \\
 \bottomrule
 \end{tabular}
-\caption{Control plane resource requirements for high-availability deployments. Kubernetes data from \cite{k8s_docs}, Nomad data from \cite{nomad_docs}.}
+\caption{Control plane resource requirements by deployment configuration. HA configurations assume replicated control plane instances with a load balancer. Proposed System HA figures assume three stateless replicas (0.5 vCPU / 1 GB each) behind a lightweight load balancer ($\sim$0.25 vCPU / 256 MB). Kubernetes data from \cite{k8s_docs}, Nomad data from \cite{nomad_docs}.}
 \label{tab:resource-comparison}
 \end{table}
 
-The proposed system achieves a 97\% reduction in CPU overhead and 96\% reduction in memory overhead compared to Kubernetes. Relative to Nomad, the proposed system achieves 83\% lower CPU overhead and 33--56\% lower memory overhead. This efficiency stems from the pull-based architecture, which eliminates complex scheduling algorithms and cluster state management. Benchmarks of lightweight Kubernetes distributions on edge hardware \cite{cilic2023edgeeval, usman2024lightweight} report similar overhead patterns, confirming that the architectural simplicity of the pull model offers measurable resource advantages even compared to stripped-down orchestration platforms.
+Even in a comparable HA configuration (three stateless control plane replicas behind a load balancer), the proposed system requires significantly fewer resources than both Kubernetes and Nomad. This advantage stems from the stateless control plane design: because the control plane holds no in-memory cluster state, replicas are interchangeable and require no consensus protocol or leader election among themselves. Benchmarks of lightweight Kubernetes distributions on edge hardware \cite{cilic2023edgeeval, usman2024lightweight} report similar overhead patterns, confirming that eliminating the etcd dependency and scheduler loop yields measurable resource advantages even when HA replication is factored in.
 
 \subsection{Design Trade-offs}
 
@@ -162,7 +163,7 @@ The evaluation reveals fundamental trade-offs inherent in the pull-based orchest
 
 \textbf{Detection Latency vs. Complexity}: The 30-second lease timeout introduces bounded failure detection latency, but eliminates the need for complex heartbeat protocols and consensus-based failure detection. This trade-off is acceptable for use cases where rapid failure detection is not critical, but may be insufficient for mission-critical applications requiring sub-second recovery times.
 
-\textbf{Scheduling Optimality vs. Scalability}: The first-come-first-served scheduling algorithm may yield suboptimal workload placement compared to global optimization algorithms such as those employed by Firmament \cite{gog2016firmament} or TetriSched \cite{grandl2016tetrisched}, but enables linear scalability without scheduling bottlenecks. As the number of agents increases, the pull-based model avoids the scheduler bottleneck that limits push-based systems. Hawk \cite{delgado2015hawk} demonstrated a similar trade-off by delegating short tasks to distributed schedulers, and Sparrow \cite{ousterhout2013sparrow} showed that stateless random sampling scheduling achieves competitive latency for short-lived tasks without global state.
+\textbf{Scheduling Optimality vs. Scalability}: The first-come-first-served scheduling algorithm may yield suboptimal workload placement compared to global optimization algorithms such as those employed by Firmament \cite{gog2016firmament} or TetriSched \cite{tumanov2016tetrisched}, but enables linear scalability because scheduling work is distributed across agents rather than centralized in the control plane. As the number of agents increases, aggregate polling frequency increases proportionally, and the stateless control plane can be replicated horizontally behind a load balancer without coordination overhead. The system's scaling ceiling is therefore determined by PostgreSQL throughput rather than by the orchestration model itself. Hawk \cite{delgado2015hawk} demonstrated a similar trade-off by delegating short tasks to distributed schedulers, and Sparrow \cite{ousterhout2013sparrow} showed that stateless random sampling scheduling achieves competitive latency for short-lived tasks without global state.
 
 \textbf{Distributed vs. Single-Node Scheduling}: The concurrent workload results reveal that single-node scheduling introduces a 76\% overhead compared to distributed scheduling (31.5s vs. 17.9s average SLO). This overhead arises because a single agent must sequentially handle container creation for multiple workloads while also refreshing leases and reconciling state. Distributing workloads across multiple agents mitigates this bottleneck, as each agent independently manages its subset of containers. This finding suggests that the system benefits from over-provisioning agent nodes to avoid resource contention, particularly when workload density per node is high.
 
@@ -178,10 +179,12 @@ Several limitations affect the generalizability of the evaluation findings:
 
 \textbf{Test Duration}: Each trial represents a single workflow execution. Long-running tests (hours or days) would be required to detect memory leaks, resource exhaustion, and other emergent behaviors that may not be apparent in short-duration tests.
 
+\textbf{Absence of Comparative Baseline}: The evaluation measures the proposed system in isolation. However, the observed scheduling and recovery performance is comparable to published figures for existing platforms: Kubernetes reports pod startup SLOs of under 5 seconds for scheduling decisions alone with cached images \cite{k8s_docs}, with default node failure recovery requiring approximately 6--10 minutes (node-monitor-grace-period of 40 seconds plus pod-eviction-timeout of 5 minutes), though this can be reduced to approximately 45--95 seconds with tuned parameters. HashiCorp Nomad achieves workload recovery in approximately 15--50 seconds in small clusters through heartbeat-based failure detection with a default grace period of 10 seconds \cite{nomad_docs}. The proposed system's RTO of 47.8 seconds is comparable to both Nomad and tuned Kubernetes, while achieving this without requiring parameter tuning or active health-check configuration. Its SLO of 14.2 seconds includes the full end-to-end path from API call through polling, lease acquisition, container creation, and status confirmation. A rigorous comparative study deploying equivalent workloads on K3s or Nomad under the same infrastructure would strengthen the empirical claims but is left as future work.
+
 \section{Conclusion}
 
 This chapter presented empirical evaluation of the pull-based orchestration system, demonstrating predictable scheduling performance (SLO of 14.2 seconds average for single workloads, 95\% CI: [13.8s, 14.6s]), reliable fault tolerance (RTO of 47.8 seconds average, 95\% CI: [45.8s, 49.8s]), and measurable single-node contention overhead (concurrent SLO of 31.5 seconds, 95\% CI: [30.7s, 32.3s]) on real distributed infrastructure. Statistical analysis confirmed that both distributed concurrent scheduling and single-node contention introduce measurable overhead (Mann-Whitney U tests, p < 0.001). Functional testing validated distributed operation, automatic rescheduling, and concurrent workload handling across 700 total workload placements.
 
-The evaluation confirms that the pull-based architecture achieves substantial resource efficiency gains (97\% CPU reduction, 96\% memory reduction compared to Kubernetes) while maintaining acceptable performance for short-lived workloads. The minimalist design successfully trades feature richness for operational simplicity, making the system suitable for resource-constrained environments and use cases where Kubernetes operational complexity is disproportionate to requirements.
+The evaluation confirms that the pull-based architecture achieves substantial resource efficiency gains even in comparable HA configurations (Table~\ref{tab:resource-comparison}) while maintaining acceptable performance for short-lived workloads. The minimalist design successfully trades feature richness for operational simplicity, making the system suitable for resource-constrained environments and use cases where Kubernetes operational complexity is disproportionate to requirements.
 
 The test results provide evidence that pull-based orchestration is a viable approach for small-scale deployments, offering a compelling alternative for organizations seeking simplicity over feature completeness. Future work should address scalability testing with larger workload counts, long-running stability tests, and performance characterization under network latency and partition scenarios.
