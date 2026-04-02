@@ -142,7 +142,7 @@ Having examined each constituent component of the proposed system the control pl
 
 The design deliberately avoids over-engineering by leveraging lightweight, well-understood technologies (PostgreSQL, REST, Docker) while retaining extensibility for instance, through pluggable runtimes or future integration with mature proxies like Envoy. This balance between simplicity and capability ensures the prototype remains feasible for implementation within the scope of this research, yet representative of real-world operational constraints.
 
-Figure~\ref{fig:final-architecture} presents a comprehensive view of the finalized architecture, capturing data flows, component responsibilities, and communication protocols. This blueprint serves as the definitive reference for the subsequent implementation phase and provides the structural foundation against which the prototype’s correctness and performance will be validated.
+Figure~\ref{fig:final-architecture} presents a comprehensive view of the finalized architecture, capturing data flows and component responsibilities. This blueprint serves as the definitive reference for the subsequent implementation phase and provides the structural foundation against which the prototype’s correctness and performance will be validated.
 
 \section{Implementation}
 
@@ -196,8 +196,8 @@ During each iteration, the agent performs the following sequence:
 \item The agent queries the control plane's \texttt{GET /api/v1/workloads} endpoint, passing its available resource capacity as query parameters (e.g., \texttt{cpu=4000} and \texttt{ram=8192}). The control plane responds with a list of workloads whose resource requirements fit within the agent's capacity and which do not currently have active leases.
 \item The agent filters the response to exclude workloads it has already acquired, maintaining a local cache of owned workloads to prevent duplicate acquisition.
 \item If candidate workloads remain, the agent selects one (using a first-fit strategy) and attempts to acquire a lease by issuing a \newline
-\texttt{PUT /api/v1/workloads/\{id\}/lease?node\_id=\{node\_id\}}
-\newline request to the control plane.
+\texttt{PUT /api/v1/workloads/\{id\}/lease}
+\newline request to the control plane. Control plane automatically recognizes node id with mTLS.
 \item The control plane records the lease in the database, associating the workload identifier with the requesting node's identifier, along with a timestamp. This mechanism is inspired by the concept of leases as fault-tolerant coordination primitives introduced by Gray and Cheriton \cite{gray1989leases}, where time-bound locks enable distributed nodes to assert ownership without requiring continuous communication. The lease acquisition is atomic: if multiple agents simultaneously attempt to lease the same workload, the database's uniqueness constraint ensures only one succeeds.
 \end{enumerate}
 
@@ -279,6 +279,8 @@ Figure~\ref{fig:seq-end-to-end} presents a comprehensive end-to-end sequence dem
 \caption{Comprehensive end-to-end sequence demonstrating the complete pull-based orchestration lifecycle: workload creation, agent acquisition, normal operation with lease renewal, node failure detection through lease expiration, and automatic recovery by another agent. The annotated RTO box shows how the 90-second Recovery Time Objective is achieved.}
 \label{fig:seq-end-to-end}
 \end{figure}
+
+The complete source code of the implementation is publicly available at \url{https://github.com/wensiet/morchy}.
 
 This implementation demonstrates that a pull-based orchestration system can be constructed with minimal operational complexity while retaining the core benefits of self-healing, fault tolerance, and decentralized coordination. The subsequent evaluation chapter presents empirical measurements of the system's performance, including recovery time objective achievement and resource efficiency.
 
