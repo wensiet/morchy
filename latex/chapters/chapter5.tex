@@ -16,6 +16,7 @@ The evaluation was conducted on real distributed infrastructure provided by Sele
 \item \textbf{Agent Nodes}: 2 agents deployed on separate nodes, each configured with resource reservations for CPU and memory
 \item \textbf{Container Runtime}: Docker Engine for container lifecycle management
 \item \textbf{Database}: PostgreSQL 16 hosting the application schema with all migrations applied
+\item \textbf{Security}: Mutual TLS (mTLS) enabled on all inter-component communication channels (control plane, agents, edge), fulfilling NFR4. Client certificates were provisioned to each agent and the edge component, with the control plane enforcing certificate-based authentication.
 \end{itemize}
 
 \subsection{Test Scenarios}
@@ -87,7 +88,7 @@ Table~\ref{tab:rto-results} presents the RTO measurements from node failure scen
 
 The RTO measurements demonstrate that the system can recover from node failures with an average time of 47.8 seconds (95\% CI: [45.8s, 49.8s]). The narrow confidence interval ($\pm$2.0 seconds) indicates highly predictable recovery behavior. The P95 of 59.3 seconds provides a reliable upper bound: 95\% of node failures result in workload recovery within one minute.
 
-The RTO is composed of three phases: (1) lease expiration detection (up to 30 seconds, depending on the alignment between the background task execution and the last lease renewal), (2) backup agent polling and lease acquisition (2--20 seconds), and (3) container creation and status reporting (approximately 10--15 seconds). The standard deviation of 10.2 seconds indicates moderate variance in recovery times, primarily driven by differences in container startup times and polling alignment.
+The RTO is composed of three phases: (1) lease expiration detection (up to the configured timeout, 30 seconds by default, depending on the alignment between the background task execution and the last lease renewal), (2) backup agent polling and lease acquisition (2--20 seconds), and (3) container creation and status reporting (approximately 10--15 seconds). The standard deviation of 10.2 seconds indicates moderate variance in recovery times, primarily driven by differences in container startup times and polling alignment.
 
 All 100 trials resulted in successful workload recovery, demonstrating that the lease-based failure detection mechanism operates reliably.
 
@@ -98,7 +99,7 @@ All 100 trials resulted in successful workload recovery, demonstrating that the 
 \label{fig:box-plots-rto}
 \end{figure}
 
-Figure~\ref{fig:cdf} presents the cumulative distribution function for all measured metrics, showing that SLO values converge rapidly while RTO exhibits a more gradual slope due to the fixed 30-second lease timeout component.
+Figure~\ref{fig:cdf} presents the cumulative distribution function for all measured metrics, showing that SLO values converge rapidly while RTO exhibits a more gradual slope due to the configurable 30-second lease timeout component.
 
 \begin{figure}[h]
 \centering
@@ -119,6 +120,8 @@ Beyond quantitative metrics, the tests validated core functional requirements:
 \item \textbf{Concurrent Workload Handling}: The system successfully handled multiple simultaneous workload creations without resource exhaustion or race conditions. All 100 concurrent workload trials (200 individual workloads on a single node) completed successfully, demonstrating that a single agent can manage multiple container lifecycles concurrently. Database transaction isolation ensured correct serialization of concurrent lease acquisition requests.
 
 \item \textbf{Lease Exclusivity}: Each workload was acquired by exactly one agent, with no double-acquisition or lease conflicts observed across 700 total workload placements across all test scenarios.
+
+\item \textbf{Secure Communication}: All test scenarios were executed with mTLS enabled, confirming that encrypted, mutually authenticated communication between agents, the control plane, and the edge component operates correctly under load without observable latency degradation.
 \end{itemize}
 
 \section{Discussion}
@@ -127,7 +130,7 @@ Beyond quantitative metrics, the tests validated core functional requirements:
 
 The test results demonstrate that the pull-based orchestration model achieves predictable scheduling performance with acceptable latency for short-lived workloads. The average SLO of 14.2 seconds (95\% CI: [13.8s, 14.6s]) for single workloads, 17.9 seconds (95\% CI: [17.0s, 18.9s]) for distributed two-workload scheduling, and 31.5 seconds (95\% CI: [30.7s, 32.3s]) for single-node concurrent scheduling is suitable for batch processing, CI/CD pipelines, and other use cases where workload initialization time is not critical compared to total execution time.
 
-The RTO measurements confirm that the lease-based failure detection mechanism provides reliable fault tolerance with a tight confidence interval (95\% CI: [45.8s, 49.8s]). While the 30-second lease timeout introduces a lower bound on failure detection, this trade-off simplifies the architecture by eliminating complex heartbeat protocols and consensus algorithms.
+The RTO measurements confirm that the lease-based failure detection mechanism provides reliable fault tolerance with a tight confidence interval (95\% CI: [45.8s, 49.8s]). While the default 30-second lease timeout introduces a lower bound on failure detection, this value is configurable and the trade-off simplifies the architecture by eliminating complex heartbeat protocols and consensus algorithms.
 
 The standard deviation values (2.0 seconds for single SLO, 4.1 seconds for concurrent SLO, 10.2 seconds for RTO) indicate low to moderate variance. The deterministic nature of the lease expiration mechanism ensures consistent failure detection performance, contributing to the overall predictability of the system.
 
@@ -149,11 +152,11 @@ Proposed System (HA) & 1.75 vCPU & 3.25 GB \\
 Proposed System (single) & 0.5 vCPU & 1 GB \\
 \bottomrule
 \end{tabular}
-\caption{Control plane resource requirements by deployment configuration. HA configurations assume replicated control plane instances with a load balancer. Proposed System HA figures assume three stateless replicas (0.5 vCPU / 1 GB each) behind a lightweight load balancer ($\sim$0.25 vCPU / 256 MB). Kubernetes data from \cite{k8s_docs}, Nomad data from \cite{nomad_docs}.}
+\caption{Control plane resource requirements by deployment configuration. HA configurations assume replicated control plane instances with a load balancer. Proposed System HA figures assume three application replicas (0.5 vCPU / 1 GB each) behind a lightweight load balancer ($\sim$0.25 vCPU / 256 MB). Kubernetes data from \cite{k8s_docs}, Nomad data from \cite{nomad_docs}.}
 \label{tab:resource-comparison}
 \end{table}
 
-Even in a comparable HA configuration (three stateless control plane replicas behind a load balancer), the proposed system requires significantly fewer resources than both Kubernetes and Nomad. This advantage stems from the stateless control plane design: because the control plane holds no in-memory cluster state, replicas are interchangeable and require no consensus protocol or leader election among themselves. Benchmarks of lightweight Kubernetes distributions on edge hardware \cite{cilic2023edgeeval, usman2024lightweight} report similar overhead patterns, confirming that eliminating the etcd dependency and scheduler loop yields measurable resource advantages even when HA replication is factored in.
+Even in a comparable HA configuration (three control plane replicas behind a load balancer), the proposed system requires significantly fewer resources than both Kubernetes and Nomad. This advantage stems from the control plane's stateless compute layer: because the application holds no in-memory cluster state and delegates persistence to PostgreSQL, replicas are interchangeable and require no application-level consensus protocol or leader election among themselves. Benchmarks of lightweight Kubernetes distributions on edge hardware \cite{cilic2023edgeeval, usman2024lightweight} report similar overhead patterns, confirming that eliminating the etcd dependency and scheduler loop yields measurable resource advantages even when HA replication is factored in.
 
 \subsection{Design Trade-offs}
 
@@ -161,9 +164,9 @@ The evaluation reveals fundamental trade-offs inherent in the pull-based orchest
 
 \textbf{Simplicity vs. Feature Richness}: The minimalist design yields substantial resource efficiency gains and operational simplicity, but sacrifices advanced features such as sophisticated scheduling algorithms (bin-packing, affinity/anti-affinity), rolling updates, and comprehensive observability. For organizations with simple orchestration requirements, this trade-off is favorable; for complex enterprise deployments, the limitations may be prohibitive.
 
-\textbf{Detection Latency vs. Complexity}: The 30-second lease timeout introduces bounded failure detection latency, but eliminates the need for complex heartbeat protocols and consensus-based failure detection. This trade-off is acceptable for use cases where rapid failure detection is not critical, but may be insufficient for mission-critical applications requiring sub-second recovery times.
+\textbf{Detection Latency vs. Complexity}: The default 30-second lease timeout introduces bounded failure detection latency, but eliminates the need for complex heartbeat protocols and consensus-based failure detection. This trade-off is acceptable for use cases where rapid failure detection is not critical, but may be insufficient for mission-critical applications requiring sub-second recovery times. Operators can reduce the timeout at the cost of increased false-positive expirations under transient network delays.
 
-\textbf{Scheduling Optimality vs. Scalability}: The first-come-first-served scheduling algorithm may yield suboptimal workload placement compared to global optimization algorithms such as those employed by Firmament \cite{gog2016firmament} or TetriSched \cite{tumanov2016tetrisched}, but enables linear scalability because scheduling work is distributed across agents rather than centralized in the control plane. As the number of agents increases, aggregate polling frequency increases proportionally, and the stateless control plane can be replicated horizontally behind a load balancer without coordination overhead. The system's scaling ceiling is therefore determined by PostgreSQL throughput rather than by the orchestration model itself. Hawk \cite{delgado2015hawk} demonstrated a similar trade-off by delegating short tasks to distributed schedulers, and Sparrow \cite{ousterhout2013sparrow} showed that stateless random sampling scheduling achieves competitive latency for short-lived tasks without global state.
+\textbf{Scheduling Optimality vs. Scalability}: The first-come-first-served scheduling algorithm may yield suboptimal workload placement compared to global optimization algorithms such as those employed by Firmament \cite{gog2016firmament} or TetriSched \cite{tumanov2016tetrisched}, but enables linear scalability because scheduling work is distributed across agents rather than centralized in the control plane. As the number of agents increases, aggregate polling frequency increases proportionally, and the control plane's stateless compute layer can be replicated horizontally behind a load balancer without coordination overhead. The system's scaling ceiling is therefore determined by PostgreSQL throughput rather than by the orchestration model itself. Hawk \cite{delgado2015hawk} demonstrated a similar trade-off by delegating short tasks to distributed schedulers, and Sparrow \cite{ousterhout2013sparrow} showed that stateless random sampling scheduling achieves competitive latency for short-lived tasks without global state.
 
 \textbf{Distributed vs. Single-Node Scheduling}: The concurrent workload results reveal that single-node scheduling introduces a 76\% overhead compared to distributed scheduling (31.5s vs. 17.9s average SLO). This overhead arises because a single agent must sequentially handle container creation for multiple workloads while also refreshing leases and reconciling state. Distributing workloads across multiple agents mitigates this bottleneck, as each agent independently manages its subset of containers. This finding suggests that the system benefits from over-provisioning agent nodes to avoid resource contention, particularly when workload density per node is high.
 

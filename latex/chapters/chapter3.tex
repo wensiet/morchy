@@ -119,7 +119,7 @@ To ensure the system meets real-world operational standards, the following non-f
 
 \item \textbf{Recovery Time}: Workload rescheduling following a node failure must complete within \textbf{90 seconds} (inclusive of failure detection and service restoration).
 
-\item \textbf{Control Plane Resilience}: Running workloads shall remain operational during transient control plane outages. Because agents manage containers locally and the control plane holds no runtime state, a control plane failure does not affect already-running workloads. New scheduling and failure recovery require a functioning control plane, which can be made highly available through stateless replication behind a load balancer.
+\item \textbf{Control Plane Resilience}: Running workloads shall remain operational during transient control plane outages. Because agents manage containers locally and the control plane holds no runtime state, a control plane failure does not affect already-running workloads. New scheduling and failure recovery require a functioning control plane, which can be made highly available through replication behind a load balancer.
 
 \item \textbf{Scalability}: The architecture shall support horizontal scaling of both control and data planes to accommodate future growth in workload volume and cluster size without architectural refactoring.
 

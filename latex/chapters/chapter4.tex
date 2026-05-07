@@ -37,7 +37,7 @@ In contrast, the Pull model is inherently declarative: each node runs a lightwei
 
 This approach offers several critical benefits aligned with modern reliability engineering principles:
 \begin{itemize}
-    \item \textbf{Self-healing}: nodes automatically recover from configuration drift or transient failures without external intervention.
+    \item \textbf{Automatic recovery}: nodes automatically recover from configuration drift or transient failures without external intervention.
     \item \textbf{Horizontal scalability}: load is distributed across nodes; the control plane serves read requests rather than initiating writes.
     \item \textbf{Network resilience}: nodes only require outbound connectivity (e.g., HTTPS to a config server), making the model compatible with restrictive network topologies.
     \item \textbf{Decoupled architecture}: failures in the control plane do not immediately halt node operations; nodes continue functioning with their last known good state.
@@ -51,7 +51,7 @@ Nonetheless, the Pull model introduces its own trade-offs:
     \item \textbf{Observability complexity}: determining the exact time of state convergence across the fleet requires additional telemetry.
 \end{itemize}
 
-Upon thorough analysis, it becomes evident that the requirements established in Section~\ref{sec:requirements} particularly the 90-second Recovery Time Objective (RTO), resilience to infrastructure failures, and support for autonomous recovery align closely with the core strengths of the Pull model. The capacity for self-healing, network resilience, and decentralized operation directly addresses the business imperatives of minimizing downtime and reducing manual intervention.
+Upon thorough analysis, it becomes evident that the requirements established in Section~\ref{sec:requirements} particularly the 90-second Recovery Time Objective (RTO), resilience to infrastructure failures, and support for autonomous recovery align closely with the core strengths of the Pull model. The capacity for automatic recovery, network resilience, and decentralized operation directly addresses the business imperatives of minimizing downtime and reducing manual intervention.
 
 Consequently, the Pull model has been selected as the foundational architectural paradigm for the proposed prototype. This choice is consistent with the broader trend toward availability-first distributed system design \cite{brewer2012cap, decandia2007dynamo}, where partition tolerance and autonomous operation are prioritized over strong consistency. Furthermore, the design will incorporate mitigations to address its inherent limitations:
 
@@ -113,7 +113,7 @@ Each node in the data plane runs a lightweight agent process, whose responsibili
     \item Reporting node health and workload status back to the control plane
 \end{itemize}
 
-The agent embodies the Pull model and enables self-healing: if a node reboots or is replaced, the agent automatically re-synchronizes with the control plane, ensuring eventual consistency. This reconciliation pattern follows the principle of declarative state convergence established in large-scale distributed systems \cite{dean2004mapreduce}.
+The agent embodies the Pull model and enables automatic recovery: if a node reboots or is replaced, the agent automatically re-synchronizes with the control plane, ensuring eventual consistency. This reconciliation pattern follows the principle of declarative state convergence established in large-scale distributed systems \cite{dean2004mapreduce}.
 
 \subsubsection{Workload Execution}
 Workloads are executed in containers to guarantee portability, isolation, and reproducibility across environments. The system uses the Docker Engine as its default container runtime due to its ubiquity, rich ecosystem, and mature tooling. However, the architecture is runtime-agnostic: the agent interfaces with the container runtime via a pluggable abstraction layer (e.g., using the Docker-compatible HTTP API). This design permits future migration to alternative runtimes such as Podman (rootless, daemonless) or CRI-O (Kubernetes-optimized) without modifying core orchestration logic.
@@ -123,7 +123,7 @@ Container images are pulled from a secure, authenticated registry, and all runti
 This layered, decoupled architecture directly addresses the functional and non-functional requirements:
 
 \begin{itemize}
-    \item Fault tolerance via agent-driven self-healing (NFR1)
+    \item Fault tolerance via agent-driven automatic recovery (NFR1)
     \item Control-plane resilience through stateless design and PostgreSQL durability
     \item Scalability via homogeneous data-plane units and REST-based coordination
     \item Security via mTLS and container isolation
@@ -222,18 +222,18 @@ The agent then enters a monitoring phase, during which it periodically checks th
 
 \subsubsection{Scenario 4: Lease Expiration and Fault Tolerance}
 
-A critical aspect of the system's resilience is its handling of node failures. The control plane runs a background task every 30 seconds that identifies and expires stale leases. A lease is considered stale if its \texttt{updated\_at} timestamp predates a configured threshold (default: 30 seconds). When a node fails unexpectedly for example, due to a VM crash, network failure, or agent process termination it ceases to renew its leases. Consequently, the background task detects the stale leases and deletes them from the database, thereby releasing the associated workloads.
+A critical aspect of the system's resilience is its handling of node failures. The control plane runs a background task at a configurable interval (default: 30 seconds) that identifies and expires stale leases. A lease is considered stale if its \texttt{updated\_at} timestamp predates a configurable threshold (default: 30 seconds). Both the lease lifetime and the expiration check interval can be tuned via command-line flags to balance detection speed against coordination overhead for a given deployment environment. When a node fails unexpectedly for example, due to a VM crash, network failure, or agent process termination it ceases to renew its leases. Consequently, the background task detects the stale leases and deletes them from the database, thereby releasing the associated workloads.
 
 Once a workload's lease expires, the workload becomes available for acquisition by other agents. The system tracks workload status transitions based on event history: if a workload remains in the \texttt{pending} state without a valid lease for more than 90 seconds, it is automatically marked as \texttt{stuck}, indicating a persistent failure to start. Conversely, if a workload in the \texttt{active} state loses its lease, it becomes eligible for rescheduling onto a healthy node.
 
-This design embodies the pull model's self-healing property: failures are detected indirectly through the absence of lease renewals, and recovery occurs automatically as other agents discover and acquire the orphaned workloads. This approach contrasts with consensus-based failure detection used in systems like ZooKeeper \cite{hunt2010zookeeper} or Chubby \cite{burrows2006chubby}, which require quorum agreement on node liveness. By relying on lease expiration as an implicit failure signal, the system avoids the coordination overhead inherent in such protocols. No explicit push-based notification or failure detection mechanism is required from the control plane.
+This design embodies the pull model's automatic recovery property: failures are detected indirectly through the absence of lease renewals, and recovery occurs automatically as other agents discover and acquire the orphaned workloads. This approach contrasts with consensus-based failure detection used in systems like ZooKeeper \cite{hunt2010zookeeper} or Chubby \cite{burrows2006chubby}, which require quorum agreement on node liveness. By relying on lease expiration as an implicit failure signal, the system avoids the coordination overhead inherent in such protocols. No explicit push-based notification or failure detection mechanism is required from the control plane.
 
 Figure~\ref{fig:seq-fault-tolerance} illustrates the fault tolerance mechanism, including node failure detection and workload rescheduling.
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.9\textwidth]{figs/4-7-workload-recovery.png}
-\caption{Sequence diagram illustrating fault tolerance through lease expiration. When Agent A fails, the background task expires the stale lease after 30 seconds, enabling Agent B to acquire and reschedule the workload.}
+\caption{Sequence diagram illustrating fault tolerance through lease expiration. When Agent A fails, the background task expires the stale lease after the configured timeout (default: 30 seconds), enabling Agent B to acquire and reschedule the workload.}
 \label{fig:seq-fault-tolerance}
 \end{figure}
 
@@ -269,7 +269,7 @@ The implementation is organized into four main components, each adhering to a la
 \item \textbf{mctl} (\texttt{pkg/mctl/}): Command-line interface for workload submission, querying, and management.
 \end{itemize}
 
-All components communicate exclusively via REST over HTTPS, with the control plane maintaining PostgreSQL as the authoritative data store. The stateless control plane design enables horizontal scaling: multiple instances can run behind a load balancer without consensus protocols or leader election, since no in-memory state is maintained between requests. Agents are stateless and homogeneous, and the pull-based model distributes scheduling decisions across the agent fleet rather than concentrating them in a central scheduler. The primary scaling ceiling is PostgreSQL throughput under concurrent lease operations rather than the orchestration model itself.
+All components communicate exclusively via REST over HTTPS, with the control plane maintaining PostgreSQL as the authoritative data store. The control plane's stateless compute layer enables horizontal scaling: multiple instances can run behind a load balancer without application-level consensus protocols or leader election, since no in-memory state is maintained between requests. All durable state is managed by PostgreSQL. Agents are stateless and homogeneous, and the pull-based model distributes scheduling decisions across the agent fleet rather than concentrating them in a central scheduler. The primary scaling ceiling is PostgreSQL throughput under concurrent lease operations rather than the orchestration model itself.
 
 Figure~\ref{fig:seq-end-to-end} presents a comprehensive end-to-end sequence demonstrating the complete lifecycle from workload creation through node failure to automatic recovery.
 
@@ -282,5 +282,5 @@ Figure~\ref{fig:seq-end-to-end} presents a comprehensive end-to-end sequence dem
 
 The complete source code of the implementation is publicly available at \url{https://github.com/wensiet/morchy}.
 
-This implementation demonstrates that a pull-based orchestration system can be constructed with minimal operational complexity while retaining the core benefits of self-healing, fault tolerance, and decentralized coordination. The subsequent evaluation chapter presents empirical measurements of the system's performance, including recovery time objective achievement and resource efficiency.
+This implementation demonstrates that a pull-based orchestration system can be constructed with minimal operational complexity while retaining the core benefits of automatic recovery, fault tolerance, and decentralized coordination. The subsequent evaluation chapter presents empirical measurements of the system's performance, including recovery time objective achievement and resource efficiency.
 

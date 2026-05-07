@@ -31,7 +31,7 @@ This thesis seeks to answer the following research questions:
 \begin{enumerate}[label=\textbf{RQ\arabic*.}, left=0pt]
 \item How can a pull-based orchestration approach reduce operational complexity and resource overhead compared to traditional push-based platforms like Kubernetes, while maintaining comparable fault tolerance and self-healing capabilities?
 
-\item What are the fundamental architectural trade-offs between pull-based and push-based orchestration models in distributed systems, particularly with respect to consistency guarantees, coordination overhead, and fault isolation mechanisms?
+\item What are the architectural trade-offs inherent in a fully pull-based orchestration model, particularly with respect to consistency guarantees, coordination overhead, fault isolation mechanisms, and the trade-off between scheduling simplicity and placement optimality?
 \end{enumerate}
 
 \section{Thesis Structure}
@@ -47,7 +47,7 @@ The remainder of this thesis is organized as follows:
 
 \item[\textbf{Chapter 4: Implementation}] Presents the system architecture, design decisions, and technical implementation details through key scenarios, demonstrating how the pull-based model operates in practice.
 
-\item[\textbf{Chapter 5: Evaluation and Discussion}] Evaluates the prototype against the established requirements, measures performance metrics (including RTO achievement), and compares the approach with existing orchestration platforms.
+\item[\textbf{Chapter 5: Evaluation and Discussion}] Evaluates the prototype against the established requirements, measures performance metrics (including RTO achievement), and discusses the architectural trade-offs observed in the pull-based model.
 
 \item[\textbf{Chapter 6: Conclusion}] Summarizes the contributions, limitations, and practical implications of the research, and outlines directions for future work.
 \end{description}
