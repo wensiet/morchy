@@ -4,7 +4,7 @@
 
 \usepackage{vmargin}
 \setpapersize{A4}
-\setmarginsrb{2.5cm}{2.2cm}{2.2cm}{2.2cm}{0pt}{10mm}{0pt}{13mm}
+\setmarginsrb{2.5cm}{2cm}{2cm}{2cm}{0pt}{10mm}{0pt}{13mm}
 \usepackage{setspace}
 \setstretch{1.5}
 \usepackage{indentfirst}
@@ -82,8 +82,8 @@
 }
 
 % \setcounter{secnumdepth}{4}
-\captionsetup[table]{labelfont={normalfont}, name={TABLE}, labelsep={newline}}
-\setlength{\parindent}{2em} 
+\captionsetup[table]{labelfont={normalfont}, name={TABLE}, labelsep={newline}, justification=centering}
+\setlength{\parindent}{1.25cm}
 \DeclareCaptionLabelSeparator{figSep}{.\quad}
 \captionsetup[figure]{labelfont={normalfont}, name={Fig.}, labelsep=period}
 \counterwithin{figure}{chapter}
@@ -136,7 +136,7 @@
 
 \begin{document}
 
-\includepdf[pages=-]{title.pdf}
+\includepdf[pages=-, offset=70 -80]{title_v2.pdf}
 \tableofcontents
 \listoftables
 \listoffigures
@@ -144,16 +144,10 @@
 
 
 \include{chapters/abstract}
-\setcounter{page}{7}
-% set manually the number, from which Chapter 1 starts!
-% Why do we put 7 in this case?
-% Title page - page 1
-% Contents - page 2, page 3
-% List of tables - page 4
-% List of figures - page 5
-% Abstract - page 6
-% Chapter 1 - page 7
-% In your thesis the counter number can be different, please count carefully and insert the corresponding number.
+% the `abstract` environment uses \titlepage internally, which resets the page
+% counter to 1; restore it here so numbering stays continuous from the title page
+% (1) through contents (2-4), list of tables (5), list of figures (6-8), abstract (9)
+\setcounter{page}{10}
 
 \include{chapters/chapter1}
 \include{chapters/chapter2}
@@ -165,5 +159,4 @@
 
 %% REFERENCES
 \printbibliography[heading=bibintoc,title={Bibliography cited}]
-\include{chapters/appex}
 \end{document}

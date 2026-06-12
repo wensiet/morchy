@@ -53,9 +53,9 @@ Table~\ref{tab:slo-results} presents the SLO measurements across different workl
 
 \begin{table}[h]
 \centering
-\resizebox{\textwidth}{!}{\csvautotabular{figs/slo_results_extended.csv}}
 \caption{Service Level Objective (SLO) measurements with confidence intervals and percentiles}
 \label{tab:slo-results}
+\resizebox{\textwidth}{!}{\csvautotabular{figs/slo_results_extended.csv}}
 \end{table}
 
 The single workload scenario demonstrates that the system can schedule individual workloads with an average time of 14.2 seconds (95\% CI: [13.8s, 14.6s]). The P95 latency of 19.6 seconds indicates that 95\% of workloads are scheduled within this bound, providing a reliable upper estimate for capacity planning.
@@ -81,9 +81,9 @@ Table~\ref{tab:rto-results} presents the RTO measurements from node failure scen
 
 \begin{table}[h]
 \centering
-\resizebox{\textwidth}{!}{\csvautotabular{figs/rto_results_extended.csv}}
 \caption{Recovery Time Objective (RTO) measurements with confidence intervals and percentiles}
 \label{tab:rto-results}
+\resizebox{\textwidth}{!}{\csvautotabular{figs/rto_results_extended.csv}}
 \end{table}
 
 The RTO measurements demonstrate that the system can recover from node failures with an average time of 47.8 seconds (95\% CI: [45.8s, 49.8s]). The narrow confidence interval ($\pm$2.0 seconds) indicates highly predictable recovery behavior. The P95 of 59.3 seconds provides a reliable upper bound: 95\% of node failures result in workload recovery within one minute.
@@ -142,6 +142,8 @@ Table~\ref{tab:resource-comparison} compares the control plane resource requirem
 
 \begin{table}[h]
 \centering
+\caption{Control plane resource requirements by deployment configuration. HA configurations assume replicated control plane instances with a load balancer. Proposed System HA figures assume three application replicas (0.5 vCPU / 1 GB each) behind a lightweight load balancer ($\sim$0.25 vCPU / 256 MB). Kubernetes data from \cite{k8s_docs}, Nomad data from \cite{nomad_docs}.}
+\label{tab:resource-comparison}
 \begin{tabular}{lcc}
 \toprule
 Platform & Control Plane CPU & Control Plane Memory \\
@@ -152,8 +154,6 @@ Proposed System (HA) & 1.75 vCPU & 3.25 GB \\
 Proposed System (single) & 0.5 vCPU & 1 GB \\
 \bottomrule
 \end{tabular}
-\caption{Control plane resource requirements by deployment configuration. HA configurations assume replicated control plane instances with a load balancer. Proposed System HA figures assume three application replicas (0.5 vCPU / 1 GB each) behind a lightweight load balancer ($\sim$0.25 vCPU / 256 MB). Kubernetes data from \cite{k8s_docs}, Nomad data from \cite{nomad_docs}.}
-\label{tab:resource-comparison}
 \end{table}
 
 Even in a comparable HA configuration (three control plane replicas behind a load balancer), the proposed system requires significantly fewer resources than both Kubernetes and Nomad. This advantage stems from the control plane's stateless compute layer: because the application holds no in-memory cluster state and delegates persistence to PostgreSQL, replicas are interchangeable and require no application-level consensus protocol or leader election among themselves. Benchmarks of lightweight Kubernetes distributions on edge hardware \cite{cilic2023edgeeval, usman2024lightweight} report similar overhead patterns, confirming that eliminating the etcd dependency and scheduler loop yields measurable resource advantages even when HA replication is factored in.

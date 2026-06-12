@@ -51,3 +51,5 @@ sandbox/
 
 .claude/skills
 RESULTS*.md
+
+latex/requirements/
