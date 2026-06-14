@@ -2,7 +2,7 @@ LATEX_BUILDER_IMAGE_NAME ?= azamatbayramov/latex-builder
 LATEX_BUILDER_IMAGE_TAG ?= latest
 FILE ?= main.tex
 
-.PHONY: pdf clean clean-pdf proposal thesis
+.PHONY: pdf clean clean-pdf proposal thesis annotation
 
 # Compile LaTeX file to PDF using the Docker image
 pdf:
@@ -25,3 +25,7 @@ clean:
 # Build thesis
 thesis:
 	$(MAKE) clean-pdf FILE=thesis.tex
+
+# Build annotation
+annotation:
+	$(MAKE) clean-pdf FILE=annotation.tex

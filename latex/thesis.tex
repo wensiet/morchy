@@ -50,7 +50,7 @@
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{hyperref}
-\hypersetup{colorlinks=true, linkcolor=black, citecolor=black}
+\hypersetup{colorlinks=true, linkcolor=black, citecolor=black, urlcolor=black}
 \usepackage{paralist}
 \usepackage{listings}
 \usepackage{zed-csp}
@@ -136,7 +136,7 @@
 
 \begin{document}
 
-\includepdf[pages=-, offset=70 -80]{title_v2.pdf}
+\includepdf[pages=-, offset=70 -80]{thesis_title.pdf}
 \tableofcontents
 \listoftables
 \listoffigures
@@ -144,9 +144,9 @@
 
 
 \include{chapters/abstract}
-% the `abstract` environment uses \titlepage internally, which resets the page
-% counter to 1; restore it here so numbering stays continuous from the title page
-% (1) through contents (2-4), list of tables (5), list of figures (6-8), abstract (9)
+% numbering runs continuously from the title page (1) through contents (2-4),
+% list of tables (5), list of figures (6-8) and abstract (9); pin the first
+% chapter to 10 so the body stays aligned if front-matter length shifts
 \setcounter{page}{10}
 
 \include{chapters/chapter1}
